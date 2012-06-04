@@ -22,4 +22,16 @@ interface ElementInterface
      */
     public function getXML();
     public function __toString();       // shortcut for getXML()
+    
+    /**
+     * Sets the properties for the element.
+     *
+     * @param mixed $properties Can be an array or an instance of PropertyInterface
+     */
+    public function setProperties($properties);
+    
+    /**
+     * Returns true if the element has any properties
+     */
+    public function hasProperties();
 }

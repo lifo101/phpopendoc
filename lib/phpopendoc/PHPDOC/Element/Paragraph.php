@@ -32,9 +32,9 @@ class Paragraph extends BaseElement implements BlockElementInterface
     protected $content;
     protected $properties;
     
-    public function __construct($content = null)
+    public function __construct($content = null, $properties = null)
     {
-        $this->indent = '';
+        $this->indent = '    ';
         $this->properties = new PropertyBag();
         $this->content = array();
         if ($content and !is_array($content)) {
@@ -44,7 +44,6 @@ class Paragraph extends BaseElement implements BlockElementInterface
             for ($i=0, $j=count($content); $i < $j; $i++) {
                 $arg = $content[$i];
                 if ($arg instanceof ElementInterface) {
-                    // Bare Text objects are converted to a TextRun object
                     if ($arg instanceof TextRunElementInterface) {
                         $this->content[] = $arg;
                     } else {
@@ -59,26 +58,33 @@ class Paragraph extends BaseElement implements BlockElementInterface
                 }
             }
         }
+
+        if ($properties) {
+            $this->setProperties($properties);
+        }
     }
     
     public function getXML()
     {
         if ($this->hasContent()) {
             $xml = $this->indent . "<w:p>\n";
+
+            // output properties
+            if ($this->hasProperties()) {
+                $xml .= $this->indent . $this->indent . "<w:pPr>\n" .
+                    $this->properties .
+                    $this->indent . $this->indent . "</w:pPr>\n";
+            }
+            
+            // output content
             foreach ($this->content as $child) {
                 $xml .= $this->indent . $this->indent . $child . "\n";
             }
+
             $xml .= $this->indent . "</w:p>\n";
             return $xml;
         } else {
             return '<w:r/>';
-        }
-    }
-    
-    public function setProperties(array $properties)
-    {
-        foreach ($properties as $key => $val) {
-            $this->properties[$key] = $val;
         }
     }
     

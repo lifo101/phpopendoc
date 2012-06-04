@@ -17,9 +17,15 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
 {
     protected $properties;
     
-    public function __construct(array $properties = null)
+    public function __construct($properties = null)
     {
-        $this->properties = is_array($properties) ? $properties : array();
+        if (is_array($properties)) {
+            $this->properties = $properties;
+        } elseif ($properties instanceof PropertyBag) {
+            $this->properties = $properties->all();
+        } else {
+            $this->properties = array();
+        }
     }
     
     /**

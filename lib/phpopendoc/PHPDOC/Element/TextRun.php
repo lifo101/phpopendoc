@@ -8,7 +8,8 @@
  */
 namespace PHPDOC\Element;
 
-use PHPDOC\Component\PropertyBag;
+use PHPDOC\Property\PropertyInterface,
+    PHPDOC\Property\TextRunProperty;
 
 /**
  * TextRun class represents 0 or more elements within a paragraph.
@@ -35,9 +36,9 @@ class TextRun extends BaseElement implements TextRunElementInterface
 {
     protected $indent;
     protected $content;
-    protected $styles;
+    protected $properties;
     
-    public function __construct($content = null)
+    public function __construct($content = null, $properties = null)
     {
         $this->indent = '    ';
         $this->content = array();
@@ -50,21 +51,30 @@ class TextRun extends BaseElement implements TextRunElementInterface
             }
         } elseif ($content !== null) {
             if (!($content instanceof ElementInterface)) {
+                // assume we were given a plain string and covert it to Text()
                 $content = new Text($content);
             }
             $this->content[] = $content;
         }
-        $this->styles = new PropertyBag();
+
+        if ($properties) {
+            $this->setProperties($properties);
+        }
     }
     
     public function getXML()
     {
         if ($this->hasContent()) {
             $xml = $this->indent . "<w:r>\n";
+            if ($this->hasProperties()) {
+                $xml .= $this->indent . $this->indent . "<w:rPr>\n" .
+                    $this->properties .
+                    $this->indent . $this->indent . "</w:rPr>\n";
+            }
             foreach ($this->content as $child) {
                 $xml .= $this->indent . $this->indent . $child . "\n";
             }
-            $xml .= $this->indent . "</w:r>";
+            $xml .= $this->indent . "</w:r>\n";
             return $xml;
         } else {
             return "<w:r/>\n";

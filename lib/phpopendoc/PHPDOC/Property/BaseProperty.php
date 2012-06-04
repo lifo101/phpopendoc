@@ -21,7 +21,7 @@ use PHPDOC\Component\PropertyBag,
  */
 class BaseProperty extends PropertyBag implements PropertyInterface
 {
-    protected $properties;
+    //protected $properties;
     protected $defaults;
     protected $map;
     protected $validProperties;
@@ -89,9 +89,11 @@ class BaseProperty extends PropertyBag implements PropertyInterface
                     break;
                 }
             }
-            if (!isset($value)) {
-                return null;
-            }
+        }
+        if (!isset($value)) {
+            // @todo IDEA: Should an exception be thrown for invalid properties?
+            throw new \OutOfBoundsException(sprintf("Invalid property used \"%s\" for class %s", $name, get_class($this)));
+            return null;
         }
         if ($raw) {
             return $value;
@@ -109,7 +111,12 @@ class BaseProperty extends PropertyBag implements PropertyInterface
         foreach ($this->properties as $name => $value) {
             $prop = $this->map($name);
             if (array_key_exists($prop, $this->validProperties)) {
-                $list[$prop] = $value;
+                if ($value !== null) {
+                    $value = $this->translate($prop, $value);
+                    if ($value !== null) {
+                        $list[$prop] = $value;
+                    }
+                }
             }
         }
         return $list;
@@ -124,26 +131,36 @@ class BaseProperty extends PropertyBag implements PropertyInterface
         return $value;
     }
 
-    private function translate_sz($value)
-    {
-        return Translator::pointToHalfPoint($value);
-    }
-    
     public function hasProperties()
     {
-        return count($this->properties) > 0;
+        return count($this) > 0;
     }
     
     public function getXML()
     {
         if ($this->hasProperties()) {
             $xml = '';
-            foreach ($this->properties as $key => $val) {
-                
+            foreach ($this as $key => $val) {
+                $xml .= sprintf("            <w:%s w:val=\"%s\"/>\n", $key, $val);
             }
             return $xml;
         } else {
-            return '';
+            return null;
         }
+    }
+    
+    public function __toString()
+    {
+        return $this->getXML();
+    }
+
+    /**
+     * Return an iterator for the properties
+     * 
+     * @internal Implements \IteratorAggregate
+     */
+    public function getIterator()
+    {
+        return new \ArrayIterator($this->all());
     }
 }

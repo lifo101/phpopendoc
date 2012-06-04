@@ -8,6 +8,9 @@
  */
 namespace PHPDOC\Element;
 
+use PHPDOC\Property\PropertyInterface,
+    PHPDOC\Property\TextRunProperty;
+
 /**
  * Base "Element" class for all elements.
  *
@@ -21,8 +24,26 @@ namespace PHPDOC\Element;
  */
 abstract class BaseElement implements ElementInterface
 {
+    protected $properties;
+    
     public function __toString()
     {
         return $this->getXML();
+    }
+    
+    public function getPropertyClass()
+    {
+        return str_replace('\Element', '\Property', get_class($this)) . 'Property';
+    }
+    
+    public function setProperties($properties)
+    {
+        $class = $this->getPropertyClass();
+        $this->properties = $properties instanceof PropertyInterface ? $properties : new $class($properties);
+    }
+    
+    public function hasProperties()
+    {
+        return count($this->properties) > 0;
     }
 }

@@ -34,4 +34,19 @@ abstract class Translator
         return round($points / 2);
     }
 
+    /**
+     * Convert the value in "Twentith of a point" (Twips).
+     *
+     * Twips are 1/1440 of an inch.
+     *
+     */
+    public static function pointToTwip($points)
+    {
+        return round($points * 20);
+    }
+
+    public static function TwipToPoint($points)
+    {
+        return round($points / 20);
+    }
 }
