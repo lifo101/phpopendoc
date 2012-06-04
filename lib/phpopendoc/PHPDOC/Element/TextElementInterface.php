@@ -1,5 +1,11 @@
 <?php
-
+/**
+ * This file is part of the PHP Open Doc library.
+ *
+ * @author Jason Morriss <lifo101@gmail.com>
+ * @since  1.0
+ * 
+ */
 namespace PHPDOC\Element;
 
 /**
@@ -11,7 +17,7 @@ namespace PHPDOC\Element;
  */
 interface TextElementInterface extends InlineElementInterface
 {
-	public function setContent($content);
-	public function getContent();
-	public function hasContent();
+    public function setContent($content);
+    public function getContent();
+    public function hasContent();
 }

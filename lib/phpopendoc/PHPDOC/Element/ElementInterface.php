@@ -1,5 +1,11 @@
 <?php
-
+/**
+ * This file is part of the PHP Open Doc library.
+ *
+ * @author Jason Morriss <lifo101@gmail.com>
+ * @since  1.0
+ * 
+ */
 namespace PHPDOC\Element;
 
 /**
@@ -11,9 +17,9 @@ namespace PHPDOC\Element;
  */
 interface ElementInterface
 {
-	/**
-	 * Returns the XML representation for the element.
-	 */
-	public function getXML();
-	public function __toString();	// shortcut for getXML()
+    /**
+     * Returns the XML representation for the element.
+     */
+    public function getXML();
+    public function __toString();       // shortcut for getXML()
 }
