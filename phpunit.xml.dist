@@ -14,12 +14,10 @@
 
     <filter>
         <whitelist>
-            <directory>./lib</directory>
-<!--
+            <directory suffix=".php">./lib</directory>
             <exclude>
-                <directory>Symfony</directory>
+                <directory>./lib/phpopendoc/PHPDOC/XSL</directory>
             </exclude>
--->
         </whitelist>
     </filter>
 </phpunit>
