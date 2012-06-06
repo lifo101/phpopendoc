@@ -9,7 +9,8 @@
 namespace PHPDOC;
 
 use PHPDOC\Element\Section,
-    PHPDOC\Component\PropertyBag;
+    PHPDOC\Property\Properties
+    ;
 
 /**
  * The Document class is the main object interface that allows you to create an
@@ -27,39 +28,37 @@ use PHPDOC\Element\Section,
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class Document implements \ArrayAccess
+class Document implements \ArrayAccess, \Countable
 {
     protected $sections;
     protected $currentSection;
-    protected $sectionNamePrefix;
     protected $properties;
     
     public function __construct()
     {
-        $this->properties = new PropertyBag();
+        $this->properties = new Properties();
         $this->sections = array();
-        $this->sectionNamePrefix = '';
     }
     
-    public function setProperty($key, $value)
-    {
-        $this->properties[$key] = $value;
-        return $this;
-    }
-    
-    public function setProperties($properties)
-    {
-        if ($properties instanceof PropertyBag) {
-            $this->properties = $properties;
-        } elseif (is_array($properties)) {
-            foreach ($properties as $key => $val) {
-                $this->properties[$key] = $val;
-            }
-        } else {
-            throw new \InvalidArgumentException("Invalid type \"" . get_class($properties) . "\" given. Expected PropertyBag or array.");
-        }
-        return $this;
-    }
+    //public function setProperty($key, $value)
+    //{
+    //    $this->properties[$key] = $value;
+    //    return $this;
+    //}
+    //
+    //public function setProperties($properties)
+    //{
+    //    if ($properties instanceof PropertyBag) {
+    //        $this->properties = $properties;
+    //    } elseif (is_array($properties)) {
+    //        foreach ($properties as $key => $val) {
+    //            $this->properties[$key] = $val;
+    //        }
+    //    } else {
+    //        throw new \InvalidArgumentException("Invalid type \"" . get_class($properties) . "\" given. Expected PropertyBag or array.");
+    //    }
+    //    return $this;
+    //}
     
     
     /**
@@ -68,21 +67,16 @@ class Document implements \ArrayAccess
      * All elements in a document are presented within sections (each section
      * is essentially a "Page"; but not always).
      *
-     * @param mixed $name The section name or Section object
+     * @param mixed $name The section name or an instance of SectionInterface
      */
     public function addSection($name = null)
     {
-        if ($name instanceof Section) {
+        if ($name instanceof SectionInterface) {
             $section = $name;
-            $name = $section->getName();
         } else {
-            $section = new Section();
-            if ($name === null) {
-                $name = $this->sectionNamePrefix . count($this->sections);
-            }
-            $section->setName($name);
+            $section = new Section($name);
         }
-        $this->currentSection = $name;
+        $this->currentSection = $section->getName();
         $this->sections[$this->currentSection] = $section;
         return $section;
     }
@@ -95,6 +89,14 @@ class Document implements \ArrayAccess
     public function hasSection($name)
     {
         return array_key_exists($name, $this->sections);
+    }
+    
+    /**
+     * Return all sections.
+     */
+    public function getSections()
+    {
+        return $this->sections;
     }
     
     /**
@@ -127,9 +129,17 @@ class Document implements \ArrayAccess
      */
     public function removeSection($name)
     {
-        if ($this->hasSection($name)) {
-            unset($this->sections[$name]);
-        }
+        unset($this->sections[$name]);
+    }
+    
+    /**
+     * Returns the total sections currently defined.
+     *
+     * @internal Implements \Countable
+     */
+    public function count()
+    {
+        return count($this->sections);
     }
     
     /**
@@ -139,12 +149,17 @@ class Document implements \ArrayAccess
      */
     public function offsetSet($ofs, $value)
     {
-        if ($value instanceof Section) {
-            $value->setName($ofs);
-            return $this->addSection($value);
+        if ($value instanceof SectionInterface) {
+            //$value->setName($ofs);
         } else {
-            throw new \UnexpectedValueException("Assignment value not an instance of \"Section\". Got \"" . get_class($value) . "\" instead.");
+            $type = gettype($value);
+            if ($type == 'object') {
+                $type = get_class($value);
+            }
+            throw new \UnexpectedValueException("Assignment value not an instance of \"SectionInterface\". Got \"$type\" instead.");
         }
+
+        return $this->addSection($value);
     }
     
     /**

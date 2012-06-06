@@ -9,7 +9,7 @@
 namespace PHPDOC\Element;
 
 /**
- * ElementInterface defines the interface for document section elements.
+ * ElementInterface defines the interface for document elements.
  *
  * @version 1.0
  * @since 1.0
@@ -17,11 +17,13 @@ namespace PHPDOC\Element;
  */
 interface ElementInterface
 {
+    
     /**
-     * Returns the XML representation for the element.
+     * Returns all content within the element.
+     *
+     * @return array An array of child content elements.
      */
-    public function getXML();
-    public function __toString();       // shortcut for getXML()
+    //public function getContent();
     
     /**
      * Sets the properties for the element.

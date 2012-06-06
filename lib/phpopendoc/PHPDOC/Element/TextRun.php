@@ -8,8 +8,9 @@
  */
 namespace PHPDOC\Element;
 
-use PHPDOC\Property\PropertyInterface,
-    PHPDOC\Property\TextRunProperty;
+use PHPDOC\Property\PropertiesInterface,
+    PHPDOC\Property\Properties
+    ;
 
 /**
  * TextRun class represents 0 or more elements within a paragraph.
@@ -32,15 +33,12 @@ use PHPDOC\Property\PropertyInterface,
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class TextRun extends BaseElement implements TextRunElementInterface
+class TextRun extends Element implements TextRunInterface
 {
-    protected $indent;
     protected $content;
-    protected $properties;
     
     public function __construct($content = null, $properties = null)
     {
-        $this->indent = '    ';
         $this->content = array();
         if (is_array($content)) {
             foreach ($content as $element) {
@@ -59,27 +57,56 @@ class TextRun extends BaseElement implements TextRunElementInterface
 
         if ($properties) {
             $this->setProperties($properties);
+        } else {
+            $this->properties = new Properties();
         }
     }
     
-    public function getXML()
-    {
-        if ($this->hasContent()) {
-            $xml = $this->indent . "<w:r>\n";
-            if ($this->hasProperties()) {
-                $xml .= $this->indent . $this->indent . "<w:rPr>\n" .
-                    $this->properties .
-                    $this->indent . $this->indent . "</w:rPr>\n";
-            }
-            foreach ($this->content as $child) {
-                $xml .= $this->indent . $this->indent . $child . "\n";
-            }
-            $xml .= $this->indent . "</w:r>\n";
-            return $xml;
-        } else {
-            return "<w:r/>\n";
-        }
-    }
+    //public function getXML()
+    //{
+    //    //foreach ($this as $key => $val) {
+    //    //    $node = $dom->createElement('w:'.$key);
+    //    //    //$node->appendChild(new \DOMAttr('w:'.$key, $val));
+    //    //    $attr = $dom->createAttribute('w:val');
+    //    //    $attr->value = htmlentities($val, ENT_NOQUOTES, 'utf-8');
+    //    //    $node->appendChild($attr);
+    //    //    $dom->appendChild($node);
+    //    //}
+    //    //return $dom;
+    //
+    //    $dom = new \DOMDocument('1.0', 'utf-8');
+    //    $run = $dom->createElement('w:r');
+    //    
+    //    // add Run properties
+    //    if ($this->hasProperties()) {
+    //        $prop = $dom->createElement('w:rPr');
+    //        $run->appendChild($prop);
+    //        $props = $this->properties->getXML();
+    //        foreach ($props->childNodes as $child) {
+    //            try {
+    //                $node = $props->importNode($child);
+    //                $dom->appendChild($node);
+    //            } catch (\Exception $e) {
+    //                print $e->getMessage() . "\n";
+    //            }
+    //        }
+    //    }
+    //    
+    //    // add Text content
+    //    //if ($this->hasContent()) {
+    //    //    foreach ($this->content as $child) {
+    //    //        //print $child . "\n";
+    //    //        foreach($child->getXML()->childNodes as $node) {
+    //    //            //$run->appendChild($node);
+    //    //        }
+    //    //    }
+    //    //}
+    //
+    //    $dom->appendChild($run);
+    //    print $dom->saveXML();
+    //    
+    //    return $dom;
+    //}
     
     public function setContent($content)
     {

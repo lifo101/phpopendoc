@@ -1,63 +1,34 @@
 <?php
 
+// You could replace this with your own autoloader
 require __DIR__ . '/autoload.php';
 
 use PHPDOC\Document,
-    PHPDOC\Property,
+    PHPDOC\Document\Writer,
     PHPDOC\Element\Section,	
+    PHPDOC\Element\Paragraph,
     PHPDOC\Element\Text,
-    PHPDOC\Element\TextRun,
-    PHPDOC\Element\Paragraph
+    PHPDOC\Element\TextRun
     ;
 
+// start a new document...
 $doc = new Document();
 
-// set global document properties
-$doc->setProperties(array(
-    // ...	
-));
+// Create a section ...
+$sec = $doc->addSection();
 
-// start a new section
-// (name argument is optional)
-$sec = $doc->addSection('page0');
+// Add some text ...
+//$sec[] = "String";
+//$sec[] = array("Array", "Array2");
+//$sec[] = new Text("Text");
+//$sec[] = new TextRun("TextRun");
+//$sec[] = new Paragraph("Paragraph");
+$sec[] = "The quick brown fox jumped over the lazy dog.";
 
-//$prop = new Property\TextRunProperty(array('bold' => true));
-//$prop['size'] = 12;
-//$prop['spacing'] = 10;
-//print "$prop\n";
-////print_r($prop->all());
-////foreach ($prop as $k => $v) {
-////    print "$k = $v\n";
-////}
-//exit;
+print_r($doc->getSections());
 
-// add a paragraph to the section with 0 or more "Text Runs"
-$p = new Paragraph(array(
-    'The quick ',
-    new TextRun('brown', array('bold' => true)),
-    ' fox jumped over the lazy dog.'
-));
-print $p;
-
-//Each line below does the same thing
-//$sec->addText('Text goes here');
-//$sec[] = 'Text goes here';
-//$sec[] = new Element\Text('Text goes here');
-
-// Add a table
-//$sec[] = Element\Table::create()
-//    ->addRow()
-//        ->addCell('R1C1')
-//        ->addCell(new Element\Text('R1C2'))
-//        ->addCell('R1C3')
-//    ->addRow()
-//        ->addCell('R2C1')
-//        ->addCell('R2C2')
-//        ->addCell('R2C3')
-//    ;
-//
-//// Add an image
-//$sec[] = new Element\Image('/path/to/image.png');
-//$sec[] = new Element\Image(array('src' => '/path/to/image.png'));
-
-
+//print Writer\XML::save($doc);
+//$xml = new Writer\XML($doc);
+//print $xml->save();
+// or
+//print Writer\XML::save($doc);

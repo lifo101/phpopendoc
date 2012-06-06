@@ -15,6 +15,6 @@ namespace PHPDOC\Element;
  * @since 1.0
  * @author Jason Morriss <lifo101@gmail.com>
  */
-interface TextRunElementInterface extends TextElementInterface
+interface TextRunInterface
 {
 }

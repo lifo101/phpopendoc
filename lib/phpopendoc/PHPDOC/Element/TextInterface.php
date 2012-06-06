@@ -15,7 +15,7 @@ namespace PHPDOC\Element;
  * @since 1.0
  * @author Jason Morriss <lifo101@gmail.com>
  */
-interface TextElementInterface extends InlineElementInterface
+interface TextInterface
 {
     public function setContent($content);
     public function getContent();

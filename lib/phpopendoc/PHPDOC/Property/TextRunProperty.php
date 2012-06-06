@@ -77,5 +77,6 @@ class TextRunProperty extends BaseProperty
         if (in_array($value, array('off', 'false', 'no', '0', 0))) {
             return 'off';
         }
+        return null;
     }
 }

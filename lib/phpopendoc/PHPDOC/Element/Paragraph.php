@@ -8,7 +8,7 @@
  */
 namespace PHPDOC\Element;
 
-use PHPDOC\Component\PropertyBag;
+use PHPDOC\Property\Properties;
 
 /**
  * The Paragraph element class represents a single paragraph that can include
@@ -26,16 +26,12 @@ use PHPDOC\Component\PropertyBag;
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class Paragraph extends BaseElement implements BlockElementInterface
+class Paragraph extends Element
 {
-    protected $indent;
     protected $content;
-    protected $properties;
     
     public function __construct($content = null, $properties = null)
     {
-        $this->indent = '    ';
-        $this->properties = new PropertyBag();
         $this->content = array();
         if ($content and !is_array($content)) {
             $content = array( $content );
@@ -44,7 +40,7 @@ class Paragraph extends BaseElement implements BlockElementInterface
             for ($i=0, $j=count($content); $i < $j; $i++) {
                 $arg = $content[$i];
                 if ($arg instanceof ElementInterface) {
-                    if ($arg instanceof TextRunElementInterface) {
+                    if ($arg instanceof TextRunInterface) {
                         $this->content[] = $arg;
                     } else {
                         // basic Text objects are converted to TextRun's
@@ -54,37 +50,19 @@ class Paragraph extends BaseElement implements BlockElementInterface
                     // Plain strings are converted to TextRun's
                     $this->content[] = new TextRun($arg);
                 } else {
-                    throw new \InvalidArgumentException("Invalid content type of \"" . get_class($arg) . "\" given. ElementInterface expected.");
+                    $type = gettype($value);
+                    if ($type == 'object') {
+                        $type = get_class($value);
+                    }
+                    throw new \UnexpectedValueException("Content type not an instance of \"ElementInterface\". Got \"$type\" instead.");
                 }
             }
         }
 
         if ($properties) {
             $this->setProperties($properties);
-        }
-    }
-    
-    public function getXML()
-    {
-        if ($this->hasContent()) {
-            $xml = $this->indent . "<w:p>\n";
-
-            // output properties
-            if ($this->hasProperties()) {
-                $xml .= $this->indent . $this->indent . "<w:pPr>\n" .
-                    $this->properties .
-                    $this->indent . $this->indent . "</w:pPr>\n";
-            }
-            
-            // output content
-            foreach ($this->content as $child) {
-                $xml .= $this->indent . $this->indent . $child . "\n";
-            }
-
-            $xml .= $this->indent . "</w:p>\n";
-            return $xml;
         } else {
-            return '<w:r/>';
+            $this->properties = new Properties();
         }
     }
     
@@ -94,7 +72,7 @@ class Paragraph extends BaseElement implements BlockElementInterface
         return $this;
     }
     
-    public function setContent(array $content = null)
+    public function setContent($content = null)
     {
         $this->content = $content;
         return $this;
@@ -109,4 +87,28 @@ class Paragraph extends BaseElement implements BlockElementInterface
     {
         return count($this->content) > 0;
     }
+
+    //public function getXML()
+    //{
+    //    if ($this->hasContent()) {
+    //        $xml = $this->indent . "<w:p>\n";
+    //
+    //        // output properties
+    //        if ($this->hasProperties()) {
+    //            $xml .= $this->indent . $this->indent . "<w:pPr>\n" .
+    //                $this->properties .
+    //                $this->indent . $this->indent . "</w:pPr>\n";
+    //        }
+    //        
+    //        // output content
+    //        foreach ($this->content as $child) {
+    //            $xml .= $this->indent . $this->indent . $child . "\n";
+    //        }
+    //
+    //        $xml .= $this->indent . "</w:p>\n";
+    //        return $xml;
+    //    } else {
+    //        return '<w:r/>';
+    //    }
+    //}
 }

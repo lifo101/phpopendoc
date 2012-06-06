@@ -19,23 +19,13 @@ use PHPDOC\Component\PropertyBag;
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class Text extends BaseElement implements TextElementInterface
+class Text extends Element implements TextInterface
 {
     protected $content;
     
     public function __construct($content = null)
     {
         $this->content = $content;
-    }
-    
-    public function getXML()
-    {
-        if ($this->hasContent()) {
-            // @todo xml:space needs to be a property
-            return '<w:t xml:space="preserve">' . htmlentities($this->content, ENT_NOQUOTES, "UTF-8") . '</w:t>';
-        } else {
-            return '<w:t/>';
-        }
     }
     
     public function setContent($content)
@@ -53,4 +43,18 @@ class Text extends BaseElement implements TextElementInterface
     {
          return $this->content !== null;
     }
+
+    //public function getXML()
+    //{
+    //    $dom = new \DOMDocument('1.0', 'utf-8');
+    //    $node = $dom->createElement('w:t', $this->content !== null ? $this->content : '');
+    //    $dom->appendChild($node);
+    //
+    //    $attr = $dom->createAttribute('xml:space');
+    //    $attr->value = 'preserve';
+    //    $node->appendChild($attr);
+    //    
+    //    return $dom;
+    //}
+    
 }
