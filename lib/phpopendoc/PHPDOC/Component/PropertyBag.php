@@ -11,7 +11,20 @@
 namespace PHPDOC\Component;
 
 /**
- * PropertyBag implements a common container for element properties
+ * PropertyBag implements a common container for properties.
+ *
+ * PropertyBag provides language shortcuts to make it easier to set/get
+ * properties on the object w/o having to always use setter/getter methods
+ * directly. The developer can choose which method is best for them.
+ * For example:
+ *      $prop->set('foo', 'bar');
+ *      $prop['foo'] = 'bar';
+ *      $prop->setFoo('boo');
+ *
+ * ** SUB-KEYS NOT OPERATIONAL YET **
+ * Sub-keys can also be used to easly create sub-arrays.
+ * For example:
+ *      $prop->set('foo.bar', 'baz');
  */
 class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
 {
@@ -26,6 +39,27 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
         } else {
             $this->properties = array();
         }
+    }
+    
+    /**
+     *
+     * @internal Intercept calls to ->set"Property"(...) where "Property"
+     * is the name of a property to set.
+     */
+    public function __call($name, $args)
+    {
+        if (substr($name, 0, 3) == 'set') {
+            if (!count($args)) {
+                $trace = debug_backtrace();
+                throw new \InvalidArgumentException(sprintf(
+                    "Missing parameter 1 in call to %s() in %s:%s",
+                    $name, $trace[0]['file'], $trace[0]['line']
+                ));
+            }
+            $key = substr($name, 3);
+            return $this->set($key, $args[0]);
+        }
+        throw new \BadMethodCallException("Undefined method \"$name\"");
     }
     
     /**
