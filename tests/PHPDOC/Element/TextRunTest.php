@@ -27,14 +27,5 @@ class TextRunTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($run->hasProperties(), '->hasProperties() returns true (PropertiesInterface)');
         $this->assertSame($prop, $run->getProperties(), '->getProperties() returns Properties');
     }
-    
-    /**
-     * @covers PHPDOC\Element\Element::setProperties
-     * @expectedException InvalidArgumentException
-     */
-    public function testSetPropertiesException()
-    {
-        $run = new TextRun('test', new \DateTime());
-    }
 
 }
