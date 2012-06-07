@@ -23,7 +23,7 @@ I wanted a library that gave me a clear API to create documents using a proper o
 
 ## Examples
 
-_Note: The API is still unstable and __WILL__ change._
+_Note: The API is still unstable and **WILL** change._
 
 ```php
 use PHPDOC\Document;
