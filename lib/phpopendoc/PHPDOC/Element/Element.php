@@ -22,9 +22,20 @@ use PHPDOC\Property\Properties,
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-abstract class Element implements ElementInterface
+class Element implements ElementInterface
 {
     protected $properties;
+    protected $elements;
+
+    public function __construct($properties = null)
+    {
+        $this->elements = array();
+        if ($properties) {
+            $this->setProperties($properties);
+        } else {
+            $this->properties = new Properties();
+        }
+    }
     
     public function setProperties($properties)
     {
@@ -40,9 +51,24 @@ abstract class Element implements ElementInterface
         }
         $this->properties = $properties;
     }
+
+    public function getProperties()
+    {
+        return $this->properties;
+    }
     
     public function hasProperties()
     {
         return count($this->properties) > 0;
+    }
+
+    public function getElements()
+    {
+        return $this->elements;
+    }
+    
+    public function hasElements()
+    {
+        return $this->elements and count($this->elements) > 0;
     }
 }

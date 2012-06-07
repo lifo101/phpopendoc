@@ -13,7 +13,8 @@ use PHPDOC\Component\PropertyBag;
 /**
  * Text element represents a single piece of text within a paragraph.
  *
- * A Text element can contain a single string of text.
+ * A Text element can contain a single string of text. It can not have
+ * child elements.
  *
  * @version 1.0
  * @since 1.0
@@ -43,18 +44,14 @@ class Text extends Element implements TextInterface
     {
          return $this->content !== null;
     }
-
-    //public function getXML()
-    //{
-    //    $dom = new \DOMDocument('1.0', 'utf-8');
-    //    $node = $dom->createElement('w:t', $this->content !== null ? $this->content : '');
-    //    $dom->appendChild($node);
-    //
-    //    $attr = $dom->createAttribute('xml:space');
-    //    $attr->value = 'preserve';
-    //    $node->appendChild($attr);
-    //    
-    //    return $dom;
-    //}
     
+    public function getElements()
+    {
+        return array();
+    }
+    
+    public function hasElements()
+    {
+        return false;
+    }
 }

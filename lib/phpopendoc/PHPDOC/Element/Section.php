@@ -41,6 +41,10 @@ class Section implements SectionInterface
         return $this;
     }
     
+    /**
+     * generate a "random" GUID
+     * @codeCoverageIgnore
+     */
     public function guid()
     {
         return sprintf('%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
@@ -67,11 +71,25 @@ class Section implements SectionInterface
         return array_key_exists($ofs, $this->elements);
     }
     
+    /**
+     * Add an element to the section.
+     *
+     * Elements can be an array. If non-block elements are passed in they will
+     * be transformed into a Paragraph or other appropriate block element
+     * before it's added to the Section.
+     *
+     * @param mixed $value Plain string, or other ElementInterface object.
+     * @param mixed $ofs   Key name offset to insert element. Optional.
+     * @return mixed       Returns the object reference that was added. If an
+     *                     array of elements were passed in an array is returned
+     *                     instead.
+     */
     public function set($value, $ofs = null)
     {
         if (!is_array($value)) {
             $value = array( $value );
         }
+        $return = array();
         foreach ($value as $element) {
             // @TODO This needs to be smarter to detect other elements, for
             //       example, If I add an Image outside of a paragraph it needs
@@ -91,14 +109,35 @@ class Section implements SectionInterface
                 throw new \UnexpectedValueException("Assignment value not an instance of \"ElementInterface\". Got \"$type\" instead.");
             }
     
+            $return[] = $element;
             if ($ofs !== null) {
                 $this->elements[$ofs] = $element;
+                unset($ofs);    // don't use it a second time ... 
             } else {
                 $this->elements[] = $element;
             }
         }
 
+        return count($return) == 1 ? $return[0] : $return;
+    }
+
+    /**
+     *
+     */
+    public function remove($ofs)
+    {
+        unset($this->elements[$ofs]);
         return $this;
+    }
+    
+    /**
+     * Return an iterator for the elements in the section
+     * 
+     * @internal Implements \IteratorAggregate
+     */
+    public function getIterator()
+    {
+        return new \ArrayIterator($this->elements);
     }
     
     /**
@@ -117,16 +156,18 @@ class Section implements SectionInterface
      * Plain strings are transformed into a TextRun() instance.
      *
      * @internal Implements \ArrayAccess
+     * @codeCoverageIgnore
      */
     public function offsetSet($ofs, $value)
     {
-        return $this->set($value, $ofs);
+        $this->set($value, $ofs);
     }
     
     /**
      * Determine if element exists
      *
      * @internal Implements \ArrayAccess
+     * @codeCoverageIgnore
      */
     public function offsetExists($ofs)
     {
@@ -137,16 +178,18 @@ class Section implements SectionInterface
      * Remove element
      *
      * @internal Implements \ArrayAccess
+     * @codeCoverageIgnore
      */
     public function offsetUnset($ofs)
     {
-        unset($this->elements[$ofs]);
+        $this->remove($ofs);
     }
     
     /**
      * Get element
      *
      * @internal Implements \ArrayAccess
+     * @codeCoverageIgnore
      */
     public function offsetGet($ofs)
     {

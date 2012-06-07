@@ -20,6 +20,7 @@ use PHPDOC\Property\PropertiesInterface,
  *
  * @example
  * <code>
+    $run = new TextRun('The quick brown fox jumped over the lazy dog.');
     $run = new TextRun(array(
         'The quick ',
         'brown fox ',
@@ -35,92 +36,24 @@ use PHPDOC\Property\PropertiesInterface,
  */
 class TextRun extends Element implements TextRunInterface
 {
-    protected $content;
     
-    public function __construct($content = null, $properties = null)
+    public function __construct($elements = null, $properties = null)
     {
-        $this->content = array();
-        if (is_array($content)) {
-            foreach ($content as $element) {
+        parent::__construct($properties);
+        if (is_array($elements)) {
+            foreach ($elements as $element) {
                 if (!($element instanceof ElementInterface)) {
                     $element = new Text($element);
                 }
-                $this->content[] = $element;
+                $this->elements[] = $element;
             }
-        } elseif ($content !== null) {
-            if (!($content instanceof ElementInterface)) {
+        } elseif ($elements !== null) {
+            if (!($elements instanceof ElementInterface)) {
                 // assume we were given a plain string and covert it to Text()
-                $content = new Text($content);
+                $elements = new Text($elements);
             }
-            $this->content[] = $content;
-        }
-
-        if ($properties) {
-            $this->setProperties($properties);
-        } else {
-            $this->properties = new Properties();
+            $this->elements[] = $elements;
         }
     }
     
-    //public function getXML()
-    //{
-    //    //foreach ($this as $key => $val) {
-    //    //    $node = $dom->createElement('w:'.$key);
-    //    //    //$node->appendChild(new \DOMAttr('w:'.$key, $val));
-    //    //    $attr = $dom->createAttribute('w:val');
-    //    //    $attr->value = htmlentities($val, ENT_NOQUOTES, 'utf-8');
-    //    //    $node->appendChild($attr);
-    //    //    $dom->appendChild($node);
-    //    //}
-    //    //return $dom;
-    //
-    //    $dom = new \DOMDocument('1.0', 'utf-8');
-    //    $run = $dom->createElement('w:r');
-    //    
-    //    // add Run properties
-    //    if ($this->hasProperties()) {
-    //        $prop = $dom->createElement('w:rPr');
-    //        $run->appendChild($prop);
-    //        $props = $this->properties->getXML();
-    //        foreach ($props->childNodes as $child) {
-    //            try {
-    //                $node = $props->importNode($child);
-    //                $dom->appendChild($node);
-    //            } catch (\Exception $e) {
-    //                print $e->getMessage() . "\n";
-    //            }
-    //        }
-    //    }
-    //    
-    //    // add Text content
-    //    //if ($this->hasContent()) {
-    //    //    foreach ($this->content as $child) {
-    //    //        //print $child . "\n";
-    //    //        foreach($child->getXML()->childNodes as $node) {
-    //    //            //$run->appendChild($node);
-    //    //        }
-    //    //    }
-    //    //}
-    //
-    //    $dom->appendChild($run);
-    //    print $dom->saveXML();
-    //    
-    //    return $dom;
-    //}
-    
-    public function setContent($content)
-    {
-        $this->content = $content;
-        return $this;
-    }
-    
-    public function getContent()
-    {
-        return $this->content;
-    }
-    
-    public function hasContent()
-    {
-        return $this->content !== null;
-    }
 }

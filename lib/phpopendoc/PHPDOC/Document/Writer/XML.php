@@ -42,7 +42,9 @@ class XML implements WriterInterface
             $document = $this->document;
         }
         
-        $this->setDom();        
+        if (!$this->dom) {
+            $this->setDom();
+        }
         $this->processDocument($document);
         $this->saveDom($output);
         

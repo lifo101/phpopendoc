@@ -9,21 +9,15 @@
 namespace PHPDOC;
 
 use PHPDOC\Element\Section,
+    PHPDOC\Element\SectionInterface,
     PHPDOC\Property\Properties
     ;
 
 /**
- * The Document class is the main object interface that allows you to create an
- * "Office Open XML" document.
+ * The Document class is the main object interface that allows you to create a
+ * document structure that can be saved using one of the Document\Writer
+ * classes.
  *
- * Documents are created with the "WordprocessingML" markup language
- * (compatable with MSWord 2007+, etc).
- *
- * @example
-    <code>
-    $doc = new Document();
-    </code>
-
  * @version 1.0
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
@@ -65,7 +59,7 @@ class Document implements \ArrayAccess, \Countable
      * Add a new section to the document
      *
      * All elements in a document are presented within sections (each section
-     * is essentially a "Page"; but not always).
+     * is essentially a "Page"; but not strictly).
      *
      * @param mixed $name The section name or an instance of SectionInterface
      */
@@ -150,7 +144,9 @@ class Document implements \ArrayAccess, \Countable
     public function offsetSet($ofs, $value)
     {
         if ($value instanceof SectionInterface) {
-            //$value->setName($ofs);
+            if (!empty($ofs)) {
+                $value->setName($ofs);
+            }
         } else {
             $type = gettype($value);
             if ($type == 'object') {

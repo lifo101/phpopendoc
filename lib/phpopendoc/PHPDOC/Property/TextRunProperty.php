@@ -17,7 +17,7 @@ use PHPDOC\Component\PropertyBag;
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class TextRunProperty extends BaseProperty
+class TextRunProperty extends Properties
 {
     public function createPropertyMap()
     {

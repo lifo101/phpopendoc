@@ -28,87 +28,35 @@ use PHPDOC\Property\Properties;
  */
 class Paragraph extends Element
 {
-    protected $content;
     
-    public function __construct($content = null, $properties = null)
+    public function __construct($elements = null, $properties = null)
     {
-        $this->content = array();
-        if ($content and !is_array($content)) {
-            $content = array( $content );
+        parent::__construct($properties);
+        if ($elements and !is_array($elements)) {
+            $elements = array( $elements );
         }
-        if ($content) {
-            for ($i=0, $j=count($content); $i < $j; $i++) {
-                $arg = $content[$i];
+        if ($elements) {
+            for ($i=0, $j=count($elements); $i < $j; $i++) {
+                $arg = $elements[$i];
                 if ($arg instanceof ElementInterface) {
                     if ($arg instanceof TextRunInterface) {
-                        $this->content[] = $arg;
+                        $this->elements[] = $arg;
                     } else {
                         // basic Text objects are converted to TextRun's
-                        $this->content[] = new TextRun($arg);
+                        $this->elements[] = new TextRun($arg);
                     }
                 } elseif (is_string($arg)) {
                     // Plain strings are converted to TextRun's
-                    $this->content[] = new TextRun($arg);
+                    $this->elements[] = new TextRun($arg);
                 } else {
-                    $type = gettype($value);
+                    $type = gettype($arg);
                     if ($type == 'object') {
-                        $type = get_class($value);
+                        $type = get_class($arg);
                     }
-                    throw new \UnexpectedValueException("Content type not an instance of \"ElementInterface\". Got \"$type\" instead.");
+                    throw new \UnexpectedValueException("Element type not an instance of \"ElementInterface\". Got \"$type\" instead.");
                 }
             }
         }
-
-        if ($properties) {
-            $this->setProperties($properties);
-        } else {
-            $this->properties = new Properties();
-        }
     }
     
-    public function addContent(ElementInterface $content)
-    {
-        $this->content[] = $content;
-        return $this;
-    }
-    
-    public function setContent($content = null)
-    {
-        $this->content = $content;
-        return $this;
-    }
-    
-    public function getContent()
-    {
-        return $this->content;
-    }
-    
-    public function hasContent()
-    {
-        return count($this->content) > 0;
-    }
-
-    //public function getXML()
-    //{
-    //    if ($this->hasContent()) {
-    //        $xml = $this->indent . "<w:p>\n";
-    //
-    //        // output properties
-    //        if ($this->hasProperties()) {
-    //            $xml .= $this->indent . $this->indent . "<w:pPr>\n" .
-    //                $this->properties .
-    //                $this->indent . $this->indent . "</w:pPr>\n";
-    //        }
-    //        
-    //        // output content
-    //        foreach ($this->content as $child) {
-    //            $xml .= $this->indent . $this->indent . $child . "\n";
-    //        }
-    //
-    //        $xml .= $this->indent . "</w:p>\n";
-    //        return $xml;
-    //    } else {
-    //        return '<w:r/>';
-    //    }
-    //}
 }

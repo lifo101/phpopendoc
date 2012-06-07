@@ -8,6 +8,8 @@
  */
 namespace PHPDOC\Element;
 
+// @codeCoverageIgnoreStart 
+
 /**
  * ElementInterface defines the interface for document elements.
  *
@@ -19,11 +21,18 @@ interface ElementInterface
 {
     
     /**
-     * Returns all content within the element.
+     * Returns all child elements
      *
      * @return array An array of child content elements.
      */
-    //public function getContent();
+    public function getElements();
+
+    /**
+     * Returns true if child elements are avilable.
+     *
+     * @return boolean Returns true if child elements are available.
+     */
+    public function hasElements();
     
     /**
      * Sets the properties for the element.
@@ -31,6 +40,11 @@ interface ElementInterface
      * @param mixed $properties Can be an array or an instance of PropertyInterface
      */
     public function setProperties($properties);
+    
+    /**
+     * Returns all properties for the element.
+     */
+    public function getProperties();
     
     /**
      * Returns true if the element has any properties

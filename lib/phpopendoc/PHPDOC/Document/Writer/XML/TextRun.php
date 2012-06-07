@@ -11,7 +11,7 @@ namespace PHPDOC\Document\Writer\XML;
 use PHPDOC\Document\WriterInterface,
     PHPDOC\Element\ElementInterface;
 
-abstract class TextRun // implements ElementInterface
+abstract class TextRun
 {
     public static function process(WriterInterface $writer, \DOMNode $root, ElementInterface $element)
     {

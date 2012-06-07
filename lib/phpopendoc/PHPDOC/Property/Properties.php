@@ -48,19 +48,5 @@ class Properties extends PropertyBag implements PropertiesInterface
     {
         return count($this) > 0;
     }
-    
-    //public function getXML()
-    //{
-    //    $dom = new \DOMDocument('1.0', 'utf-8');
-    //    foreach ($this as $key => $val) {
-    //        $node = $dom->createElement('w:'.$key);
-    //        //$node->appendChild(new \DOMAttr('w:'.$key, $val));
-    //        $attr = $dom->createAttribute('w:val');
-    //        $attr->value = htmlentities($val, ENT_NOQUOTES, 'utf-8');
-    //        $node->appendChild($attr);
-    //        $dom->appendChild($node);
-    //    }
-    //    return $dom;
-    //}
 
 }

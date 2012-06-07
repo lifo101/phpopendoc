@@ -8,8 +8,10 @@
  */
 namespace PHPDOC\Element;
 
+// @codeCoverageIgnoreStart 
+
 /**
- * TextElementInterface defines the interface for inline text ranges.
+ * TextInterface defines the interface for inline text.
  *
  * @version 1.0
  * @since 1.0

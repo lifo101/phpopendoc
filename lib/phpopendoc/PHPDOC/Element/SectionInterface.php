@@ -8,11 +8,13 @@
  */
 namespace PHPDOC\Element;
 
-interface SectionInterface extends \ArrayAccess, \Countable
+// @codeCoverageIgnoreStart 
+
+interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable
 {
 
     /**
-     * Returns all elements within the section.
+     * Returns all child elements
      * 
      * The consumer will take this array of elements and generate the required
      * output to produce the section within the document.

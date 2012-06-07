@@ -15,20 +15,29 @@ use PHPDOC\Document,
 $doc = new Document();
 
 // Create a section ...
-$sec = $doc->addSection();
+$sec = $doc->addSection('page one');
 
-// Add some text ...
-//$sec[] = "String";
-//$sec[] = array("Array", "Array2");
-//$sec[] = new Text("Text");
-//$sec[] = new TextRun("TextRun");
-//$sec[] = new Paragraph("Paragraph");
+// Quick method to add paragraphs (with no formatting)
 $sec[] = "The quick brown fox jumped over the lazy dog.";
+$sec[] = "The early bird gets the worm.";
 
-print_r($doc->getSections());
+// More advanced method to add a paragraph that contains formatting
+$sec = $doc->addSection('page two');
+$sec[] = new Paragraph(array(
+    "This is one short sentence ",
+    new TextRun("with different styles ", array('italic' => true, 'bold' => false)),
+    "set on it."
+), array(
+    'bold' => true,
+    'spacingLeft' => 10,
+    'spacingAfter' => 30
+));
 
-//print Writer\XML::save($doc);
-//$xml = new Writer\XML($doc);
-//print $xml->save();
-// or
-//print Writer\XML::save($doc);
+// Save the document as XML ...
+$xml = new Writer\XML($doc);
+$xml->setSaveException(false);  // used for developement
+$xml->save();                   // by default output is written to STDOUT
+                                // specify a filename to write to disk
+
+// shortcut to save the document (as XML)
+//Writer\XML::saveDocument($doc);
