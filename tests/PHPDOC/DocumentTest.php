@@ -7,6 +7,9 @@ use PHPDOC\Document,
 
 class DocumentTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @covers PHPDOC\Document::__construct
+     */
     public function testConstructor()
     {
         $doc = new Document();
