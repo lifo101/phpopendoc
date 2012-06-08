@@ -22,7 +22,7 @@ $sec[] = "The quick brown fox jumped over the lazy dog.";
 $sec[] = "The early bird gets the worm.";
 
 // More advanced method to add a paragraph that contains formatting
-$sec = $doc->addSection('page two');
+$sec = $doc->addSection('page two', array('break' => 'continuous'));
 $sec[] = new Paragraph(array(
     "This is one short sentence ",
     new TextRun("with different styles ", array('italic' => true, 'bold' => false)),

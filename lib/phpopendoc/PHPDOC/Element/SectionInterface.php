@@ -31,4 +31,20 @@ interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable
      */
     public function setName($name);
 
+    /**
+     * Sets the properties for the element.
+     *
+     * @param mixed $properties Can be an array or an instance of PropertyInterface
+     */
+    public function setProperties($properties);
+    
+    /**
+     * Returns all properties for the element.
+     */
+    public function getProperties();
+    
+    /**
+     * Returns true if the element has any properties
+     */
+    public function hasProperties();
 }

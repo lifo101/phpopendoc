@@ -63,12 +63,12 @@ class Document implements \ArrayAccess, \Countable
      *
      * @param mixed $name The section name or an instance of SectionInterface
      */
-    public function addSection($name = null)
+    public function addSection($name = null, $properties = null)
     {
         if ($name instanceof SectionInterface) {
             $section = $name;
         } else {
-            $section = new Section($name);
+            $section = new Section($name, $properties);
         }
         $this->currentSection = $section->getName();
         $this->sections[$this->currentSection] = $section;
