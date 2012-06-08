@@ -139,6 +139,10 @@ class XML implements WriterInterface
         $node->appendChild(new \DOMAttr('name', $section->getName()));
         $root->appendChild($node);
 
+<<<<<<< HEAD
+=======
+        // @todo Section does not have properties yet ...
+>>>>>>> ee06f6aaebc576b9d6418fc6b90c107a7a7cbf36
         if ($section->hasProperties()) {
             foreach ($section->getProperties() as $key => $val) {
                 $node->appendChild(new \DOMAttr($key, $val));
