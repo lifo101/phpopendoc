@@ -52,7 +52,7 @@ class TextRun extends Element implements TextRunInterface
             $elements = array( $elements );
         }
         foreach ($elements as $element) {
-            if ($element instanceof Text) {
+            if ($element instanceof TextInterface) {
                 // if the Text element has any properties we have to transfer
                 // those properties over to the TextRun since Text elements
                 // can not have properties of their own.
