@@ -42,7 +42,7 @@ class Paragraph extends Element
                     if ($arg instanceof TextRunInterface) {
                         $this->elements[] = $arg;
                     } else {
-                        // basic Text objects are converted to TextRun's
+                        // Any other element is automatically wrapped
                         $this->elements[] = new TextRun($arg);
                     }
                 } elseif (is_string($arg)) {
