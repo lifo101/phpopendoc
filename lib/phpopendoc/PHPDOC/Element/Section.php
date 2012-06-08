@@ -8,6 +8,9 @@
  */
 namespace PHPDOC\Element;
 
+use PHPDOC\Property\Properties,
+    PHPDOC\Property\PropertiesInterface;
+
 /**
  * Section element is a wrapper for a single section within a document.
  *
@@ -23,11 +26,17 @@ class Section implements SectionInterface
 {
     protected $name;
     protected $elements;
+    protected $properties;
     
-    public function __construct($name = null)
+    public function __construct($name = null, $properties = null)
     {
         $this->name = $name === null ? self::guid() : $name;
         $this->elements = array();
+        if ($properties) {
+            $this->setProperties($properties);
+        } else {
+            $this->properties = new Properties();
+        }
     }
     
     public function getName()
@@ -121,9 +130,31 @@ class Section implements SectionInterface
         return count($return) == 1 ? $return[0] : $return;
     }
 
-    /**
-     *
-     */
+    public function setProperties($properties)
+    {
+        if (is_array($properties)) {
+            $properties = new Properties($properties);
+        }
+        if (!($properties instanceof PropertiesInterface)) {
+            $type = gettype($properties);
+            if ($type == 'object') {
+                $type = get_class($properties);
+            }
+            throw new \InvalidArgumentException("Unexpected properties type of \"$type\" given. Expected PropertiesInterface or array.");
+        }
+        $this->properties = $properties;
+    }
+
+    public function getProperties()
+    {
+        return $this->properties;
+    }
+    
+    public function hasProperties()
+    {
+        return count($this->properties) > 0;
+    }
+    
     public function remove($ofs)
     {
         unset($this->elements[$ofs]);
