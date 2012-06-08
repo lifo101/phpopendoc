@@ -14,8 +14,8 @@ use PHPDOC\Property\Properties,
 /**
  * Section element is a wrapper for a single section within a document.
  *
- * A Aection is usually the same as a document "Page" (but not strictly).
- * A section contains 1 or more elements that make up the content for the
+ * A Section is usually the same as a document "Page" (but not strictly).
+ * A section contains 0 or more elements that make up the content for the
  * document. For example: Paragraphs of texts, images, tables, etc...
  *
  * @version 1.0
@@ -39,11 +39,17 @@ class Section implements SectionInterface
         }
     }
     
+    /**
+     * {@inheritDoc}
+     */
     public function getName()
     {
         return $this->name;
     }
     
+    /**
+     * {@inheritDoc}
+     */
     public function setName($name)
     {
         $this->name = $name;
@@ -54,7 +60,7 @@ class Section implements SectionInterface
      * generate a "random" GUID
      * @codeCoverageIgnore
      */
-    public function guid()
+    protected function guid()
     {
         return sprintf('%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
             mt_rand(0, 65535), mt_rand(0, 65535),
@@ -65,19 +71,43 @@ class Section implements SectionInterface
         );
     }
     
+    /**
+     * {@inheritDoc}
+     */
     public function getElements()
     {
         return $this->elements;
     }
-    
+
+    /**
+     * Get an element by offset.
+     *
+     * @param mixed $ofs Offset index or string name.
+     */
     public function get($ofs)
     {
         return $this->has($ofs) ? $this->elements[$ofs] : null;
     }
-    
+
+    /**
+     * Returns true if the element offset exists.
+     *
+     * @param mixed $ofs Offset index or string name.
+     */    
     public function has($ofs)
     {
         return array_key_exists($ofs, $this->elements);
+    }
+
+    /**
+     * Remove an element by offset index or string name.
+     * 
+     * @param mixed $ofs Offset index or string name.
+     */    
+    public function remove($ofs)
+    {
+        unset($this->elements[$ofs]);
+        return $this;
     }
     
     /**
@@ -130,6 +160,9 @@ class Section implements SectionInterface
         return count($return) == 1 ? $return[0] : $return;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function setProperties($properties)
     {
         if (is_array($properties)) {
@@ -145,20 +178,20 @@ class Section implements SectionInterface
         $this->properties = $properties;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getProperties()
     {
         return $this->properties;
     }
     
+    /**
+     * {@inheritDoc}
+     */
     public function hasProperties()
     {
         return count($this->properties) > 0;
-    }
-    
-    public function remove($ofs)
-    {
-        unset($this->elements[$ofs]);
-        return $this;
     }
     
     /**

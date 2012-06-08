@@ -28,6 +28,8 @@ interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable
 
     /**
      * Sets the internal name of the Section.
+     *
+     * @param string $name The name of the section
      */
     public function setName($name);
 
