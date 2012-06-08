@@ -7,6 +7,7 @@ use PHPDOC\Document,
     PHPDOC\Document\Writer,
     PHPDOC\Element\Section,	
     PHPDOC\Element\Paragraph,
+    PHPDOC\Element\Image,
     PHPDOC\Element\Text,
     PHPDOC\Element\TextRun
     ;
@@ -21,11 +22,14 @@ $sec = $doc->addSection('page one');
 $sec[] = "The quick brown fox jumped over the lazy dog.";
 $sec[] = "The early bird gets the worm.";
 
-// More advanced method to add a paragraph that contains formatting
+// More advanced method to add a paragraph that contains formatting and other
+// elements.
 $sec = $doc->addSection('page two', array('break' => 'continuous'));
 $sec[] = new Paragraph(array(
-    "This is one short sentence ",
-    new TextRun("with different styles ", array('italic' => true, 'bold' => false)),
+    "This is one short sentence that has an image ",
+    new Image(__DIR__ . '/../tests/res/media/earth.jpg'),
+    " and has ",
+    new TextRun("different styles ", array('italic' => true, 'bold' => false)),
     "set on it."
 ), array(
     'bold' => true,
