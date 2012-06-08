@@ -24,8 +24,9 @@ class Text extends Element implements TextInterface
 {
     protected $content;
     
-    public function __construct($content = null)
+    public function __construct($content = null, $properties = null)
     {
+        parent::__construct($properties);
         $this->content = $content;
     }
     

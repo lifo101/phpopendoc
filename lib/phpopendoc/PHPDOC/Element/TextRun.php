@@ -36,23 +36,35 @@ use PHPDOC\Property\PropertiesInterface,
  */
 class TextRun extends Element implements TextRunInterface
 {
-    
+
+    /**
+     * Construct a new TextRun instance
+     *
+     * @param mixed $elements   A single element or an array of elements,
+     *                          ranging from simple strings to ElementInterface
+     *                          objects.
+     * @param mixed $properties Custom properties.
+     */
     public function __construct($elements = null, $properties = null)
     {
         parent::__construct($properties);
-        if (is_array($elements)) {
-            foreach ($elements as $element) {
-                if (!($element instanceof ElementInterface)) {
-                    $element = new Text($element);
+        if (!is_array($elements)) {
+            $elements = array( $elements );
+        }
+        foreach ($elements as $element) {
+            if ($element instanceof Text) {
+                // if the Text element has any properties we have to transfer
+                // those properties over to the TextRun since Text elements
+                // can not have properties of their own.
+                if ($element->hasProperties()) {
+                    foreach ($element->getProperties() as $key => $val) {
+                        $this->properties[$key] = $val;
+                    }
                 }
-                $this->elements[] = $element;
+            } elseif (!($element instanceof ElementInterface)) {
+                $element = new Text($element);
             }
-        } elseif ($elements !== null) {
-            if (!($elements instanceof ElementInterface)) {
-                // assume we were given a plain string and covert it to Text()
-                $elements = new Text($elements);
-            }
-            $this->elements[] = $elements;
+            $this->elements[] = $element;
         }
     }
     
