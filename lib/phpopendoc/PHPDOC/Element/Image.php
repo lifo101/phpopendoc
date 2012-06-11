@@ -106,7 +106,7 @@ class Image extends Element implements ImageInterface
     /**
      * {@inheritdoc}
      */
-    public function getMimeType()
+    public function getContentType()
     {
         // @codeCoverageIgnoreStart
         if (!$this->cache) {

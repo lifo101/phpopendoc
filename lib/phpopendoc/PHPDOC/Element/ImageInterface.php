@@ -51,6 +51,6 @@ interface ImageInterface
     /**
      * Return the mimetype of the image
      */
-    public function getMimeType();
+    public function getContentType();
     
 }

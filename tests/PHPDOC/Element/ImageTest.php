@@ -26,7 +26,7 @@ class ImageTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->jpg, $img->getSource(), '->getSource() returned source');
         $this->assertEquals(150, $img->getWidth(), '->getWidth() returned width');
         $this->assertEquals(150, $img->getHeight(), '->getHeight() returned height');
-        $this->assertEquals('image/jpeg', $img->getMimeType(), '->getMimeType() returned mimetype');
+        $this->assertEquals('image/jpeg', $img->getContentType(), '->getContentType() returned content type');
         $this->assertEquals('jpg', $img->getExtension(), '->getExtension() returned extension');
     }
 
