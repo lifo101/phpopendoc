@@ -42,6 +42,11 @@ class XML implements WriterInterface
     protected $dom;
 
     /**
+     * @var array Class paths to check for element processors
+     */
+    protected $classPaths;
+
+    /**
      * Construct a new instance
      *
      * @param Document The document to process. Optional.
@@ -50,6 +55,7 @@ class XML implements WriterInterface
     {
         $this->document = $document;
         $this->throwSaveException = true;
+        $this->classPaths = array( get_class($this), get_class() );
     }
 
     /**
@@ -206,10 +212,17 @@ class XML implements WriterInterface
             $name = substr($name, strrpos($name, '\\')+1);
 
             // have processor class process the element
-            $className = __CLASS__ . '\\' . $name;
-            if (class_exists($className)) {
-                $className::process($this, $root, $child);
-            } else {
+            $processed = false;
+            foreach ($this->classPaths as $class) {
+                $className = $class . '\\' . $name;
+                if (class_exists($className)) {
+                    $className::process($this, $root, $child);
+                    $processed = true;
+                    break;
+                }
+            }
+
+            if (!$processed) {
                 if ($this->throwSaveException) {
                     throw new SaveException("Element processor for \"$name\" not found in \"$className\"");
                 } else {
