@@ -39,7 +39,7 @@ class Paragraph extends Element
             for ($i=0, $j=count($elements); $i < $j; $i++) {
                 $arg = $elements[$i];
                 if ($arg instanceof ElementInterface) {
-                    if ($arg instanceof TextRunInterface) {
+                    if ($arg instanceof TextRunInterface or $arg instanceof LinkInterface) {
                         $this->elements[] = $arg;
                     } else {
                         // Any other element is automatically wrapped

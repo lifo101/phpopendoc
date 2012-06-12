@@ -163,7 +163,7 @@ class XML implements WriterInterface
             $root = $this->dom->createElement('document');
             $this->dom->appendChild($root);
 
-            $body = $this->dom->createElement('body');
+            $body = $this->dom->createElement('sections');
             $root->appendChild($body);
             
             foreach ($document->getSections() as $section) {
