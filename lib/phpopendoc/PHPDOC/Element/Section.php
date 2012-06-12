@@ -26,12 +26,16 @@ class Section implements SectionInterface
 {
     protected $name;
     protected $elements;
+    protected $headers;
+    protected $footers;
     protected $properties;
     
     public function __construct($name = null, $properties = null)
     {
         $this->name = $name === null ? self::guid() : $name;
         $this->elements = array();
+        $this->headers = array();
+        $this->footers = array();
         if ($properties) {
             $this->setProperties($properties);
         } else {
@@ -60,7 +64,7 @@ class Section implements SectionInterface
      * generate a "random" GUID
      * @codeCoverageIgnore
      */
-    protected function guid()
+    public static function guid()
     {
         return sprintf('%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
             mt_rand(0, 65535), mt_rand(0, 65535),
@@ -79,6 +83,49 @@ class Section implements SectionInterface
         return $this->elements;
     }
 
+    public function hasElements()
+    {
+        return count($this->elements) > 0;
+    }
+    
+    public function addHeader($type = null)
+    {
+        if ($type === null or $type == 'both') {
+            $type = 'default';
+        }
+        // only one of each type is allowed
+        if (isset($this->headers['header-' . $type])) {
+            throw new SectionException("A \"$type\" header already exists. Only one of each type is allowed.");
+        }
+        $head = new HeaderFooter('header', $type);
+        $this->headers['header-' . $type] = $head;
+        return $head;
+    }
+    
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+    
+    public function getFooters()
+    {
+        return $this->footers;
+    }
+
+    public function addFooter($type = null)
+    {
+        if ($type === null or $type == 'both') {
+            $type = 'default';
+        }
+        // only one of each type is allowed
+        if (isset($this->footers['footer-' . $type])) {
+            throw new SectionException("A \"$type\" footer already exists. Only one of each type is allowed.");
+        }
+        $foot = new HeaderFooter('footer', $type);
+        $this->footers['footer-' . $type] = $foot;
+        return $foot;
+    }
+    
     /**
      * Get an element by offset.
      *
@@ -213,7 +260,7 @@ class Section implements SectionInterface
     {
         return count($this->elements);
     }
-    
+
     /**
      * Add an element.
      *

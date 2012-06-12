@@ -179,7 +179,7 @@ class XML implements WriterInterface
     /**
      * Process an individual section block
      *
-     * @param \DOMNode         $node    The DOM node to attach elements to.
+     * @param \DOMNode         $root    The DOM node to attach elements to.
      * @param SectionInterface $section The Section to process
      */
     public function processSection(\DOMNode $root, SectionInterface $section)
@@ -194,14 +194,55 @@ class XML implements WriterInterface
             }
         }
 
-        $this->processNode($node, $section);
+        $headers = $this->dom->createElement('headers');
+        foreach ($section->getHeaders() as $h) {
+            // don't bother processing it if it has no elements 
+            if ($h->hasElements()) {
+                $head = $this->dom->createElement('header');
+                $head->appendChild(new \DOMAttr('type', $h->getType()));
+                if ($h->hasProperties()) {
+                    foreach ($h->getProperties() as $key => $val) {
+                        $head->appendChild(new \DOMAttr($key, $val));
+                    }
+                }
+                $headers->appendChild($head);
+                $this->processNode($head, $h);
+            }
+        }
+        if ($headers->hasChildNodes()) {
+            $node->appendChild($headers);
+        }
+
+        $footers = $this->dom->createElement('footers');
+        foreach ($section->getFooters() as $h) {
+            // don't bother processing it if it has no elements 
+            if ($h->hasElements()) {
+                $foot = $this->dom->createElement('footer');
+                $foot->appendChild(new \DOMAttr('type', $h->getType()));
+                if ($h->hasProperties()) {
+                    foreach ($h->getProperties() as $key => $val) {
+                        $foot->appendChild(new \DOMAttr($key, $val));
+                    }
+                }
+                $footers->appendChild($foot);
+                $this->processNode($foot, $h);
+            }
+        }
+        if ($footers->hasChildNodes()) {
+            $node->appendChild($footers);
+        }
+        
+        $content = $this->dom->createElement('content');
+        $node->appendChild($content);
+
+        $this->processNode($content, $section);
     }
 
     /**
      * Process an individual element
      *
-     * @param \DOMNode         $node    The DOM node to attach elements to.
-     * @param SectionInterface $section The element to process
+     * @param \DOMNode         $root    The DOM node to attach elements to.
+     * @param ElementInterface $element The element to process
      */
     public function processNode(\DOMNode $root, $element)
     {

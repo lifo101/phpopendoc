@@ -1,4 +1,14 @@
 <?php
+/**
+ * This example shows how to create a basic Document using various ways of
+ * adding content. This example may be a bit overwhelming at first, so you may
+ * want to look at some of the other examples that are more focused.
+ *
+ * This example outputs the document as XML just for testing purposes. The XML
+ * is not in WordML format. It's a simple structure for testing purposes. The
+ * XML could actually be traversed and used elsewhere too. Someone could even
+ * use XSLT transformations on it to convert it into something else.
+ */
 
 // You could replace this with your own autoloader
 require __DIR__ . '/autoload.php';
@@ -24,7 +34,7 @@ $sec[] = "The early bird gets the worm.";
 
 // More advanced method to add a paragraph that contains formatting and other
 // elements.
-$sec = $doc->addSection('page two', array('break' => 'continuous'));
+$sec = $doc->addSection('page two');
 $sec[] = new Paragraph(array(
     "This is one short sentence that has an image ",
     new Image(__DIR__ . '/../tests/res/media/earth.jpg'),
@@ -37,11 +47,19 @@ $sec[] = new Paragraph(array(
     'spacingAfter' => 30
 ));
 
-// Save the document as XML ...
-$xml = new Writer\XML($doc);
-$xml->setSaveException(false);  // used for developement
-$xml->save();                   // by default output is written to STDOUT
-                                // specify a filename to write to disk
+// add a header and footer ... Add content just like a Section
+$sec->addHeader()->set(      new Text('My Header',   array('align' => 'center')));
+$sec->addFooter('odd')->set( new Text('Odd footer',  array('align' => 'left')));
+$sec->addFooter('even')->set(new Text('Even footer', array('align' => 'right')));
 
-// shortcut to save the document (as XML)
-//Writer\XML::saveDocument($doc);
+// Save the document as XML ...
+Writer\XML::saveDocument($doc);     // by default output is written to STDOUT
+                                    // specify a filename as 2nd param to write
+                                    // to disk
+
+// alternate method for saving the document. This allows you more control
+// over how the Writer will save the document. However, In this example we
+// don't do anything special.
+//$xml = new Writer\XML($doc);
+//$xml->save(__DIR__ . '/' . basename(__FILE__, '.php') . '.xml');
+
