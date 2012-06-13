@@ -88,7 +88,7 @@ class Section implements SectionInterface
         return count($this->elements) > 0;
     }
     
-    public function addHeader($type = null)
+    public function addHeader($type = null, HeaderFooterInterface $head = null)
     {
         if ($type === null or $type == 'both') {
             $type = 'default';
@@ -97,7 +97,9 @@ class Section implements SectionInterface
         if (isset($this->headers['header-' . $type])) {
             throw new SectionException("A \"$type\" header already exists. Only one of each type is allowed.");
         }
-        $head = new HeaderFooter('header', $type);
+        if ($head === null) {
+            $head = new HeaderFooter('header', $type);
+        }
         $this->headers['header-' . $type] = $head;
         return $head;
     }
@@ -112,7 +114,7 @@ class Section implements SectionInterface
         return $this->footers;
     }
 
-    public function addFooter($type = null)
+    public function addFooter($type = null, HeaderFooterInterface $head = null)
     {
         if ($type === null or $type == 'both') {
             $type = 'default';
@@ -121,7 +123,9 @@ class Section implements SectionInterface
         if (isset($this->footers['footer-' . $type])) {
             throw new SectionException("A \"$type\" footer already exists. Only one of each type is allowed.");
         }
-        $foot = new HeaderFooter('footer', $type);
+        if ($foot === null) {
+            $foot = new HeaderFooter('footer', $type);
+        }
         $this->footers['footer-' . $type] = $foot;
         return $foot;
     }
