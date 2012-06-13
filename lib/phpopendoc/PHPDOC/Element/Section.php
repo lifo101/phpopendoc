@@ -103,12 +103,22 @@ class Section implements SectionInterface
         $this->headers['header-' . $type] = $head;
         return $head;
     }
-    
+
     public function getHeaders()
     {
         return $this->headers;
     }
-    
+
+    public function hasHeaders()
+    {
+        return count($this->headers) > 0;
+    }
+
+    public function hasFooters()
+    {
+        return count($this->footers) > 0;
+    }
+
     public function getFooters()
     {
         return $this->footers;

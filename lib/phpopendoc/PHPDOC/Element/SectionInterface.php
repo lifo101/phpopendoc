@@ -64,6 +64,16 @@ interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable
     public function getHeaders();
     
     /**
+     * Return true if headers are defined
+     */
+    public function hasHeaders();
+
+    /**
+     * Return true if footers are defined
+     */
+    public function hasFooters();
+
+    /**
      * Return defined footers
      */
     public function getFooters();
