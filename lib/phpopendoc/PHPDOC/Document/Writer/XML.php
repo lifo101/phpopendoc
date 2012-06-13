@@ -73,14 +73,12 @@ class XML implements WriterInterface
                     throw new SaveException("No Document defined");
                 } else {
                     trigger_error("No Document defined", E_USER_ERROR);
+                    return $this;
                 }
             }
             $document = $this->document;
         }
         
-        if (!$this->dom) {
-            $this->setDom();
-        }
         $this->processDocument($document);
         $this->saveDom($output);
         
@@ -104,6 +102,7 @@ class XML implements WriterInterface
                 throw new SaveException("Error opening output \"$output\" for writing");
             } else {
                 trigger_error("Error opening output \"$output\" for writing", E_USER_ERROR);
+                return $this;
             }
         }
         fwrite($fp, $this->dom->saveXML());
@@ -158,6 +157,10 @@ class XML implements WriterInterface
      */
     public function processDocument(Document $document)
     {
+        if (!$this->dom) {
+            $this->setDom();
+        }
+
         // process main Document
         if ($document instanceof Document) {
             $root = $this->dom->createElement('document');
@@ -174,6 +177,8 @@ class XML implements WriterInterface
             // process sub node within the document
             $root = $document;
         }
+        
+        return $this->dom;
     }
     
     /**
@@ -198,7 +203,7 @@ class XML implements WriterInterface
         foreach ($section->getHeaders() as $h) {
             // don't bother processing it if it has no elements 
             if ($h->hasElements()) {
-                $head = $this->dom->createElement('header');
+                $head = $this->dom->createElement('hdr');
                 $head->appendChild(new \DOMAttr('type', $h->getType()));
                 if ($h->hasProperties()) {
                     foreach ($h->getProperties() as $key => $val) {
@@ -217,7 +222,7 @@ class XML implements WriterInterface
         foreach ($section->getFooters() as $h) {
             // don't bother processing it if it has no elements 
             if ($h->hasElements()) {
-                $foot = $this->dom->createElement('footer');
+                $foot = $this->dom->createElement('ftr');
                 $foot->appendChild(new \DOMAttr('type', $h->getType()));
                 if ($h->hasProperties()) {
                     foreach ($h->getProperties() as $key => $val) {
@@ -232,7 +237,7 @@ class XML implements WriterInterface
             $node->appendChild($footers);
         }
         
-        $content = $this->dom->createElement('content');
+        $content = $this->dom->createElement('body');
         $node->appendChild($content);
 
         $this->processNode($content, $section);
@@ -268,6 +273,7 @@ class XML implements WriterInterface
                     throw new SaveException("Element processor for \"$name\" not found in \"$className\"");
                 } else {
                     trigger_error("Element processor for \"$name\" not found in \"$className\"", E_USER_WARNING);
+                    return;
                 }
             }
         }
