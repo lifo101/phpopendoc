@@ -61,6 +61,8 @@ class TextRun extends Element implements TextRunInterface
                         $this->properties[$key] = $val;
                     }
                 }
+            } elseif ($element instanceof LinkInterface) {
+                throw new ElementException("A Link can not be nested inside a TextRun");
             } elseif (!($element instanceof ElementInterface)) {
                 $element = new Text($element);
             }
