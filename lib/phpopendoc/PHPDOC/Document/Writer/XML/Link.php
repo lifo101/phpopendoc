@@ -15,10 +15,10 @@ abstract class Link
 {
     public static function process(WriterInterface $writer, \DOMNode $root, ElementInterface $element)
     {
-        $node = $writer->getDom()->createElement('hyperlink');
+        $node = $writer->getDom()->createElement('a');
         $root->appendChild($node);
 
-        $node->appendChild(new \DOMAttr('target', $element->getTarget()));
+        $node->appendChild(new \DOMAttr('href', $element->getTarget()));
 
         if ($element->hasProperties()) {
             foreach ($element->getProperties() as $key => $val) {
