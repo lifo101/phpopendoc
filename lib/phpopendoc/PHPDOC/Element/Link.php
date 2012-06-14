@@ -39,6 +39,11 @@ class Link extends Paragraph implements LinkInterface
         $this->target = $target;
     }
     
+    public function getInterface()
+    {
+        return __NAMESPACE__ . '\\LinkInterface';
+    }
+
     public function getTarget()
     {
         return $this->target;

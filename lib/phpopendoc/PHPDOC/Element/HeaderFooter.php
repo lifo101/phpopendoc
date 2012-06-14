@@ -34,9 +34,9 @@ class HeaderFooter extends Section implements HeaderFooterInterface
     protected $position;
     protected $type;
     
-    public function __construct($position = 'header', $type = null)
+    public function __construct($position = 'header', $type = null, $properties = null)
     {
-        parent::__construct();
+        parent::__construct(null, $properties);
         if ($position != 'header' and $position != 'footer') {
             throw new \UnexpectedValueException("Invalid \$position \"$position\" specified. Must be \"header\" or \"footer\"");
         }
@@ -50,5 +50,10 @@ class HeaderFooter extends Section implements HeaderFooterInterface
     public function getType()
     {
         return $this->type;
+    }
+    
+    public function getPosition()
+    {
+        return $this->position;
     }
 }

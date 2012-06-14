@@ -11,7 +11,7 @@ namespace PHPDOC\Element;
 // @codeCoverageIgnoreStart 
 
 /**
- * TextRunElementInterface defines the interface for inline text runs.
+ * TextRunInterface defines the interface for inline text runs.
  *
  * @version 1.0
  * @since 1.0

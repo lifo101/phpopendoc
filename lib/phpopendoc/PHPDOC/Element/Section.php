@@ -93,13 +93,16 @@ class Section implements SectionInterface
         if ($type === null or $type == 'both') {
             $type = 'default';
         }
+
         // only one of each type is allowed
         if (isset($this->headers['header-' . $type])) {
             throw new SectionException("A \"$type\" header already exists. Only one of each type is allowed.");
         }
+
         if ($head === null) {
             $head = new HeaderFooter('header', $type);
         }
+
         $this->headers['header-' . $type] = $head;
         return $head;
     }

@@ -19,7 +19,20 @@ namespace PHPDOC\Element;
  */
 interface ElementInterface
 {
-    
+
+    /**
+     * Get the interface type.
+     *
+     * Each element can implement multiple interfaces but that can cause
+     * conflicts when trying to save a document. The document writer may need
+     * to know what kind of base Interface the element is and this should
+     * return that interface.
+     *
+     * @example
+     *      A Link extends Paragraph but is still really a link.
+     */
+    public function getInterface();
+
     /**
      * Returns all child elements
      *

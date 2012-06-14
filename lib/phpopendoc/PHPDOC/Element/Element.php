@@ -37,6 +37,18 @@ class Element implements ElementInterface
         }
     }
     
+    public function getInterface()
+    {
+        $r = new \ReflectionClass($this);
+        foreach ($r->getInterfaceNames() as $interface) {
+            // simple return the first interface that is not ElementInterface
+            if (strpos($interface, 'ElementInterface') == false) {
+                return $interface;
+            }
+        }
+        return 'ElementInterface';  // failsafe; shouldn't happen
+    }
+
     public function setProperties($properties)
     {
         if (is_array($properties)) {

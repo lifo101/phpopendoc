@@ -11,14 +11,12 @@ namespace PHPDOC\Element;
 // @codeCoverageIgnoreStart 
 
 /**
- * LinkInterface defines the interface for inline hyperlinks.
+ * CharacterInterface
  *
  * @version 1.0
  * @since 1.0
  * @author Jason Morriss <lifo101@gmail.com>
  */
-interface LinkInterface
+interface CharacterInterface
 {
-    public function getTarget();
-    public function setTarget($target);
 }
