@@ -124,7 +124,7 @@ class Section implements SectionInterface
         return $this->footers;
     }
 
-    public function addFooter($type = null, HeaderFooterInterface $head = null)
+    public function addFooter($type = null, HeaderFooterInterface $foot = null)
     {
         if ($type === null or $type == 'both') {
             $type = 'default';
