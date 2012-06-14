@@ -22,7 +22,7 @@ use PHPDOC\Element\Section,
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class Document implements \ArrayAccess, \Countable
+class Document implements \IteratorAggregate, \ArrayAccess, \Countable
 {
     protected $sections;
     protected $currentSection;
@@ -125,7 +125,17 @@ class Document implements \ArrayAccess, \Countable
     {
         unset($this->sections[$name]);
     }
-    
+
+    /**
+     * Return an iterator for the elements in the section
+     *
+     * @internal Implements \IteratorAggregate
+     */
+    public function getIterator()
+    {
+        return new \ArrayIterator($this->sections);
+    }
+
     /**
      * Returns the total sections currently defined.
      *
