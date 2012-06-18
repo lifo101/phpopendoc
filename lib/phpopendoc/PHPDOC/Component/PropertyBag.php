@@ -35,13 +35,15 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     
     public function __construct($properties = null)
     {
-        $prop = array();
         if (is_array($properties)) {
             $prop = $properties;
         } elseif ($properties instanceof PropertyBag) {
             $prop = $properties->all();
+        } else {
+            $prop = array();
         }
 
+        $this->properties = array();
         foreach ($prop as $key => $val) {
             if (is_array($key)) {
                 foreach ($key as $k => $v) {
