@@ -41,17 +41,11 @@ class PropertyBagTest extends \PHPUnit_Framework_TestCase
         $bag = new PropertyBag();
         $bag->setfoo('bar');
         $this->assertEquals('bar', $bag->get('foo'), '->setfoo() assigned value properly (__call magic)');
-    }
 
-    /**
-     * @covers PHPDOC\Component\PropertyBag::set
-     * @expectedException InvalidArgumentException
-     */
-    public function testSetException()
-    {
-        // @todo Once PropertyBag supports nested keys this needs to be refactored
         $bag = new PropertyBag();
-        $bag->set('foo.bar', 'baz');    // throws InvalidArgumentException
+        $bag->set('foo.bar', 'baz');
+        $expected = array( 'foo' => array( 'bar' => 'baz' ));
+        $this->assertEquals($expected, $bag->all(), '->set() assigned nested value properly');
     }
 
     /**

@@ -21,10 +21,13 @@ namespace PHPDOC\Component;
  *      $prop['foo'] = 'bar';
  *      $prop->setFoo('boo');
  *
- * ** SUB-KEYS NOT OPERATIONAL YET **
- * Sub-keys can also be used to easly create sub-arrays.
+ * Sub-keys can also be used to easly create sub-arrays w/o long php syntax.
  * For example:
  *      $prop->set('foo.bar', 'baz');
+ *      $prop['foo.bar'] = 'baz';
+ *
+ *      NOTE: It should be obvious, but you can not use __call magic
+ *      ($prop->setVariableName() with nested arrays.
  */
 class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
 {
@@ -32,19 +35,27 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     
     public function __construct($properties = null)
     {
+        $prop = array();
         if (is_array($properties)) {
-            $this->properties = $properties;
+            $prop = $properties;
         } elseif ($properties instanceof PropertyBag) {
-            $this->properties = $properties->all();
-        } else {
-            $this->properties = array();
+            $prop = $properties->all();
+        }
+
+        foreach ($prop as $key => $val) {
+            if (is_array($key)) {
+                foreach ($key as $k => $v) {
+                    $this->set($k, $v);
+                }
+            } else {
+                $this->set($key, $val);
+            }
         }
     }
     
     /**
-     *
-     * @internal Intercept calls to ->set"Property"(...) where "Property"
-     * is the name of a property to set.
+     * Intercept calls to ->set"Property"(...) where "Property" is the name of
+     * a property to set (case-sensitive).
      */
     public function __call($name, $args)
     {
@@ -70,14 +81,39 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
      */
     public function set($key, $value)
     {
-        // @todo FIXME; Allow nested keys like "foo.bar" to be set properly.
-        if (strpos($key, '.') !== false) {
-            throw new \InvalidArgumentException("Can not use nested key ($key) in set().");
+        if (strpos($key, '.') === false) {
+            $this->properties[$key] = $value;
+        } else {
+            $ref =& $this->_getArrayRef($key, true);
+            if ($ref !== null) {
+                $ref = $value;
+            }
         }
-        $this->properties[$key] = $value;
         return $this;
     }
     
+    private function &_getArrayRef($path, $auto_create = false)
+    {
+        $keys = array_filter(array_map('trim', explode('.', $path)), function($s){ return !empty($s); });
+        $ref =& $this->properties;
+
+        for ($i = 0, $j = count($keys); $i < $j; $i++) {
+            $key = $keys[$i];
+            if (!isset($ref[$key])) {
+                if ($i < $j) {
+                    if ($auto_create) {
+                        $ref[$key] = array();   // start new nested-array
+                    } else {
+                        return null;
+                    }
+                }
+            }
+            $ref =& $ref[$key];
+        }
+        
+        return $ref;
+    }
+
     /**
      * Remove a property by key
      */	
@@ -86,37 +122,15 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
         if (strpos($key, '.') === false) {
             unset($this->properties[$key]);
             return $this;
+        } else {
+            // @todo FIXME; Allow nested keys like "foo.bar" to be removed properly.
+            // I think the only way to make this work would be to iterate over
+            // the entire array, copying each node a new array that is not the
+            // removed node...
+            throw new \InvalidArgumentException('Removing nested properties is not supported at this time.');
         }
 
-        // @todo FIXME; Allow nested keys like "foo.bar" to be removed properly.
-        throw new \InvalidArgumentException('Removing nested properties is not supported at this time.');
-
-        // dealing with nested array references is tricky... 		
-        //$path = explode('.', $key);
-        //if (!$path or !array_key_exists($path[0], $this->properties)) {
-        //	return $this;
-        //}
-        //
-        //$unset = false;
-        //$prev =& $this->properties;
-        //$root =& $this->properties[$path[0]];
-        //for ($i = 1, $j = count($path); $i < $j; $i++) {
-        //	$unset = true;
-        //	if (is_array($root)) {
-        //		if (array_key_exists($path[$i], $root)) {
-        //			$prev =& $root;
-        //			$root =& $root[$path[$i]];
-        //		}
-        //	} else {
-        //		if ($i+1 == $j) {
-        //			$unset = true;
-        //		}
-        //	}
-        //}
-        //if ($unset) {
-        //	unset($root);
-        //}
-        //return $this;
+        return $this;
     }
     
     /**
