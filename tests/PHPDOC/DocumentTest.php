@@ -135,4 +135,21 @@ class DocumentTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2, count($doc), 'count() returns proper value');
         $this->assertEquals(2, $doc->count(), '->count() returns proper value');
     }
+    
+    /**
+     * @covers PHPDOC\Document::getIterator
+     */
+    public function testIterator()
+    {
+        $doc = new Document();
+        $doc->addSection();
+        $doc->addSection();
+
+        $total = 0;
+        foreach ($doc as $s) {
+            $total++;
+        }
+        $this->assertEquals(2, $total, '->getIterator() works');
+        
+    }
 }
