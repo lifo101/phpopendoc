@@ -41,12 +41,12 @@ class Element implements ElementInterface
     {
         $r = new \ReflectionClass($this);
         foreach ($r->getInterfaceNames() as $interface) {
-            // simple return the first interface that is not ElementInterface
+            // simply return the first interface that is not ElementInterface
             if (strpos($interface, 'ElementInterface') == false) {
                 return $interface;
             }
         }
-        return 'ElementInterface';  // failsafe; shouldn't happen
+        return __NAMESPACE__ . '\\ElementInterface';  // failsafe; shouldn't happen; except in testing
     }
 
     public function setProperties($properties)
