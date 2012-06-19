@@ -24,6 +24,9 @@ class ParagraphTest extends \PHPUnit_Framework_TestCase
         $actual = $par->getElements();
         $this->assertInstanceOf('PHPDOC\\Element\\TextRunInterface', $actual[0], 'new accepted Text() instance');
         $this->assertSame($run, $actual[1], 'new accepted TextRun() instance');
+
+        // a paragraph should not be returning ElementInterface
+        $this->assertNotEquals('PHPDOC\\Element\\ElementInterface', $par->getInterface(), '->getInterface() does not return ElementInterface');
         
         $par = new Paragraph(array('test1', 'test2'));
         $this->assertCount(2, $par->getElements(), '->getElements() returns array');

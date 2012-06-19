@@ -2,6 +2,7 @@
 
 use PHPDOC\Document,
     PHPDOC\Element\Element,
+    PHPDOC\Element\Paragraph,
     PHPDOC\Property\Properties,
     PHPDOC\Property\PropertiesInterface
     ;
@@ -18,6 +19,7 @@ class ElementTest extends \PHPUnit_Framework_TestCase
         $ele = new Element($prop);
         $this->assertTrue($ele->hasProperties(), '->hasProperties() returns true (PropertiesInterface)');
         $this->assertSame($prop, $ele->getProperties(), '->getProperties() returns Properties');
+        $this->assertEquals('PHPDOC\\Element\\ElementInterface', $ele->getInterface(), '->getInterface() returns ElementInterface');
     }
     
     /**
