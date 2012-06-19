@@ -21,8 +21,15 @@
                 <!-- PHPUnit 3.6 doesn't seem to have a better way to do this;
                     I can't get wildcards to work. v3.7  may fix this. -->
                 <file>./lib/phpopendoc/PHPDOC/Document/WriterInterface.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/CharacterInterface.php</file>
                 <file>./lib/phpopendoc/PHPDOC/Element/ElementInterface.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/ElementException.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/HeaderFooterInterface.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/ImageInterface.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/LinkInterface.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/ParagraphInterface.php</file>
                 <file>./lib/phpopendoc/PHPDOC/Element/SectionInterface.php</file>
+                <file>./lib/phpopendoc/PHPDOC/Element/SectionException.php</file>
                 <file>./lib/phpopendoc/PHPDOC/Element/TextInterface.php</file>
                 <file>./lib/phpopendoc/PHPDOC/Element/TextRunInterface.php</file>
                 <file>./lib/phpopendoc/PHPDOC/Property/PropertiesInterface.php</file>
