@@ -45,9 +45,9 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
 
         $this->properties = array();
         foreach ($prop as $key => $val) {
-            if (is_array($key)) {
-                foreach ($key as $k => $v) {
-                    $this->set($k, $v);
+            if (is_array($val)) {
+                foreach ($val as $k => $v) {
+                    $this->set($key . '.' . $k, $v);
                 }
             } else {
                 $this->set($key, $val);
@@ -96,21 +96,29 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     
     private function &_getArrayRef($path, $auto_create = false)
     {
-        $keys = array_filter(array_map('trim', explode('.', $path)), function($s){ return !empty($s); });
+        $keys = explode('.', $path);
         $ref =& $this->properties;
 
         for ($i = 0, $j = count($keys); $i < $j; $i++) {
             $key = $keys[$i];
-            if (!isset($ref[$key])) {
-                if ($i < $j) {
-                    if ($auto_create) {
-                        $ref[$key] = array();   // start new nested-array
-                    } else {
-                        return null;
-                    }
+            if (is_array($ref) and !isset($ref[$key])) {
+                if ($auto_create) {
+                    $ref[$key] = array();   // start new nested-array
+                } else {
+                    throw new \Exception("Key path not found");
                 }
             }
-            $ref =& $ref[$key];
+            
+            if (is_array($ref)) {
+                $ref =& $ref[$key];
+            } else {
+                if ($auto_create) {
+                    $ref = array($key => '');
+                    $ref =& $ref[$key];
+                } else {
+                    throw new \Exception("Key path not found");
+                }
+            }
         }
         
         return $ref;
@@ -152,26 +160,12 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
             return array_key_exists($key, $this->properties);
         }
 
-        $path = explode('.', $key);
-        if (!$path or !array_key_exists($path[0], $this->properties)) {
+        try {
+            $ref =& $this->_getArrayRef($key);
+            return true;
+        } catch (\Exception $e) {
             return false;
         }
-
-        $root = $this->properties[$path[0]];
-        for ($i = 1, $j = count($path); $i < $j; $i++) {
-            if (is_array($root)) {
-                if (array_key_exists($path[$i], $root)) {
-                    $root = $root[$path[$i]];
-                } else {
-                    return false;
-                }
-            } else {
-                // if we're at the last path node then we have a valid value
-                return ($i+1 == $j);
-            }
-        }
-
-        return true;
     }
     
     /**
@@ -187,23 +181,13 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
         if (!$deep || strpos($key, '.') === false) {
             return array_key_exists($key, $this->properties) ? $this->properties[$key] : $default;
         }
-
-        $path = explode('.', $key);
-        if (!$path or !array_key_exists($path[0], $this->properties)) {
+        
+        try {
+            $ref =& $this->_getArrayRef($key);
+            return $ref;
+        } catch (\Exception $e) {
             return $default;
         }
-        
-        // loop over the "dotted" path until we find the nested value
-        $value = $this->properties[$path[0]];
-        for ($i = 1, $j = count($path); $i < $j; $i++) {
-            // nested key does not exist?
-            if (!is_array($value) or !array_key_exists($path[$i], $value)) {
-                return $default;
-            }
-            $value = $value[$path[$i]];
-        }
-
-        return $value;
     }
     
     /**

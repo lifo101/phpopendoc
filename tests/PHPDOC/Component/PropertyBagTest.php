@@ -13,19 +13,21 @@ class PropertyBagTest extends \PHPUnit_Framework_TestCase
         $bag = new PropertyBag();
         $this->assertEmpty($bag->all(), 'Constructor accepts null');
 
-        $ary = array('foo' => 'bar');
+        $ary = array('foo' => 'bar', 'nested' => array('hello.nelly' => 'world'));
+        $expected = array('foo' => 'bar', 'nested' => array('hello' => array('nelly' => 'world')));
         $bag = new PropertyBag($ary);
-        $this->assertEquals($ary, $bag->all(), 'Constructor accepts array');
+        $this->assertEquals($expected, $bag->all(), 'Constructor accepts array');
 
         $prop1 = new PropertyBag($ary);
         $bag = new PropertyBag($prop1);
-        $this->assertEquals($ary, $bag->all(), 'Constructor accepts PropertyBag instance');
+        $this->assertEquals($expected, $bag->all(), 'Constructor accepts PropertyBag instance');
         
     }
     
     /**
      * @covers PHPDOC\Component\PropertyBag::set
      * @covers PHPDOC\Component\PropertyBag::offsetSet
+     * @covers PHPDOC\Component\PropertyBag::_getArrayRef
      * @covers PHPDOC\Component\PropertyBag::__call
      */
     public function testSet()
@@ -39,6 +41,11 @@ class PropertyBagTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('bar', $bag->get('foo'), '$bag[] assigned value properly (\ArrayAccess)');
 
         $bag = new PropertyBag();
+        $bag['foo'] = 'bar';
+        $bag['foo.newkey'] = 'value';
+        $this->assertEquals('value', $bag->get('foo.newkey'), '$bag[] assigned nested value properly (\ArrayAccess)');
+
+        $bag = new PropertyBag();
         $bag->setfoo('bar');
         $this->assertEquals('bar', $bag->get('foo'), '->setfoo() assigned value properly (__call magic)');
 
@@ -46,6 +53,7 @@ class PropertyBagTest extends \PHPUnit_Framework_TestCase
         $bag->set('foo.bar', 'baz');
         $expected = array( 'foo' => array( 'bar' => 'baz' ));
         $this->assertEquals($expected, $bag->all(), '->set() assigned nested value properly');
+
     }
 
     /**
@@ -121,13 +129,14 @@ class PropertyBagTest extends \PHPUnit_Framework_TestCase
      * @covers PHPDOC\Component\PropertyBag::offsetExists
      * @covers PHPDOC\Component\PropertyBag::get
      * @covers PHPDOC\Component\PropertyBag::offsetGet
+     * @covers PHPDOC\Component\PropertyBag::_getArrayRef
      */
     public function testHasGet()
     {
         $nested = array('bar' => 'baz', 'baz' => array('hello' => 'world'));
         $ary = array('foo' => $nested);
         $bag = new PropertyBag($ary);
-    
+        
         $this->assertNull($bag->get('does_not_exist'), '->get() returns null');
         $this->assertNull($bag->get('does_not_exist.foo.bar'), '->get() returns null');
         $this->assertNull($bag->get('foo.does.not.exist'), '->get() returns null (for nested variable)');
@@ -135,10 +144,9 @@ class PropertyBagTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('default', $bag->get('foo.does.not.exist', 'default'), '->get() returns default (for nested variable)');
         $this->assertEquals($nested, $bag->get('foo'), '->get() returns nested array');
         $this->assertEquals($nested['bar'], $bag->get('foo.bar'), '->get() returns nested variable');
-    
+
         $this->assertTrue($bag->has('foo'), '->has() returns true (foo)');
         $this->assertTrue($bag->has('foo.bar'), '->has() returns true (foo.bar)');
-        $this->assertTrue($bag->has('foo.bar.baz'), '->has() returns true (for.bar.baz)');
         $this->assertFalse($bag->has('foo.bar.baz.zeek'), '->has() returns false (for.bar.baz.zeek)');
         $this->assertFalse($bag->has('does_not_exist'), '->has() returns false (does_not_exist)');
         $this->assertFalse($bag->has('foo.does_not_exist'), '->has() returns false (foo.does_not_exist)');
