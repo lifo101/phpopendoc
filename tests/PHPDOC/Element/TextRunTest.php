@@ -1,6 +1,7 @@
 <?php
 
 use PHPDOC\Document,
+    PHPDOC\Element\Link,
     PHPDOC\Element\Text,
     PHPDOC\Element\TextRun,
     PHPDOC\Property\Properties
@@ -33,4 +34,11 @@ class TextRunTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($run->getProperties()->has('bold'), 'TextRun copied Text properties');
     }
 
+    /**
+     * @expectedException PHPDOC\Element\ElementException
+     */
+    public function testLinkException()
+    {
+        $run = new TextRun( new Link('a link') );
+    }
 }
