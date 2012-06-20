@@ -204,10 +204,11 @@ class Table extends Element implements TableInterface, BlockInterface
     {
         $this->context = self::CONTEXT_ROW;
         $this->rowIdx += 1;
-        $this->rows[ $this->rowIdx ] = array(
-            'properties' => $this->_createProperties($properties, 'row'),
-            'cells' => array()
-        );
+        $this->rows[ $this->rowIdx ] = new TableRow($this->_createProperties($properties, 'row'));
+        //$this->rows[ $this->rowIdx ] = array(
+        //    'properties' => $this->_createProperties($properties, 'row'),
+        //    'cells' => array()
+        //);
         $this->rowRef =& $this->rows[ $this->rowIdx ];
         
         return $this;
@@ -225,12 +226,14 @@ class Table extends Element implements TableInterface, BlockInterface
             $this->row();
         }
         $this->context = self::CONTEXT_CELL;
-        
-        $this->rowRef['cells'][] = array(
-            'properties' => $this->_createProperties($properties, 'cell'),
-            'elements' => array(),
-        );
-        $this->cellRef =& $this->rowRef['cells'][ count($this->rowRef['cells']) - 1 ];
+
+        //$this->rowRef['cells'][] = array(
+        //    'properties' => $this->_createProperties($properties, 'cell'),
+        //    'elements' => array(),
+        //);
+        //$this->cellRef =& $this->rowRef['cells'][ count($this->rowRef['cells']) - 1 ];
+        $this->cellRef = new TableCell($this->_createProperties($properties, 'cell'));
+        $this->rowRef->addElement($this->cellRef);
         
         if ($elements !== null) {
             $this->add($elements);
@@ -262,7 +265,8 @@ class Table extends Element implements TableInterface, BlockInterface
             //if (!($e instanceof ElementInterface)) {
             //    $e = new Text($e);
             //}
-            $this->cellRef['elements'][] = $e;
+            //$this->cellRef['elements'][] = $e;
+            $this->cellRef->addElement($e);
         }
         
         return $this;
@@ -284,7 +288,7 @@ class Table extends Element implements TableInterface, BlockInterface
                 $trace = debug_backtrace();
                 throw new ElementException("No rows are defined. Call row() first at {$trace[0]['file']}:{$trace[0]['line']}");
             }
-            $this->rowRef['properties']['skipBefore'] = $count;
+            $this->rowRef->getProperties()->set('skipBefore', $count);
         }
         return $this;
     }
@@ -296,7 +300,7 @@ class Table extends Element implements TableInterface, BlockInterface
                 $trace = debug_backtrace();
                 throw new ElementException("No rows are defined. Call row() first at {$trace[0]['file']}:{$trace[0]['line']}");
             }
-            $this->rowRef['properties']['skipAfter'] = $count;
+            $this->rowRef->getProperties()->set('skipAfter', $count);
         }
         return $this;
     }
@@ -311,16 +315,18 @@ class Table extends Element implements TableInterface, BlockInterface
                 $prop = $this->getProperties();
                 break;
             case self::CONTEXT_ROW:
-                if (!$this->rowRef['properties']) {
-                    $this->rowRef['properties'] = $this->_createProperties();
-                }
-                $prop = $this->rowRef['properties'];
+                //if (!$this->rowRef['properties']) {
+                //    $this->rowRef['properties'] = $this->_createProperties();
+                //}
+                //$prop = $this->rowRef['properties'];
+                $prop = $this->rowRef->getProperties();
                 break;
             case self::CONTEXT_CELL:
-                if (!$this->cellRef['properties']) {
-                    $this->cellRef['properties'] = $this->_createProperties();
-                }
-                $prop = $this->cellRef['properties'];
+                //if (!$this->cellRef['properties']) {
+                //    $this->cellRef['properties'] = $this->_createProperties();
+                //}
+                //$prop = $this->cellRef['properties'];
+                $prop = $this->cellRef->getProperties();
                 break;
             case self::CONTEXT_GRID:
                 throw new ElementException("Table grids do not have properties");
@@ -402,7 +408,7 @@ class Table extends Element implements TableInterface, BlockInterface
      */
     public function getElements()
     {
-        return $this->rows;
+        return array();
     }
     
     /**
@@ -410,7 +416,7 @@ class Table extends Element implements TableInterface, BlockInterface
      */
     public function hasElements()
     {
-        return $this->rows and count($this->rows) > 0;
+        return false;
     }
 
     /**

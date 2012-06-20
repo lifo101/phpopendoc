@@ -88,7 +88,11 @@ interface TableInterface
     public function prop($key, $val = null);
     
     /**
-     * Return all rows in the table
+     * Return all rows in the table.
+     *
+     * Tables are special elements that have many children but due to how those
+     * children relate the rows must be processed differently than other
+     * elements that use getElements().
      */
     public function getRows();
     

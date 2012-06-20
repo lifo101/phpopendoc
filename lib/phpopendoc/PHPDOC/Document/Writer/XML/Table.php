@@ -10,8 +10,7 @@ namespace PHPDOC\Document\Writer\XML;
 
 use PHPDOC\Document\WriterInterface,
     PHPDOC\Element\BlockInterface,
-    PHPDOC\Element\ElementInterface,
-    PHPDOC\Element\Paragraph as BlockParagraph
+    PHPDOC\Element\ElementInterface
     ;
 
 abstract class Table
@@ -27,35 +26,30 @@ abstract class Table
             }
         }
 
-        foreach ($element->getElements() as $row) {
-            // skip any rows that have no cells
-            //if (!$row['cells']) {
-            //    continue;
-            //}
-            
+        foreach ($element->getRows() as $row) {
             $tr = $writer->getDom()->createElement('tr');
             $table->appendChild($tr);
 
-            if (isset($row['properties'])) {
-                foreach ($row['properties'] as $key => $val) {
+            if ($row->hasProperties()) {
+                foreach ($row->getProperties() as $key => $val) {
                     $tr->appendChild(new \DOMAttr($key, $val));
                 }
             }
 
-            foreach ($row['cells'] as $cell) {
+            foreach ($row->getElements() as $cell) {
                 $td = $writer->getDom()->createElement('td');
                 $tr->appendChild($td);
 
-                if (isset($cell['properties'])) {
-                    foreach ($cell['properties'] as $key => $val) {
+                if ($cell->hasProperties()) {
+                    foreach ($cell->getProperties() as $key => $val) {
                         $td->appendChild(new \DOMAttr($key, $val));
                     }
                 }
 
-                foreach ($cell['elements'] as $element) {
+                foreach ($cell->getElements() as $element) {
                     // All cell content must be in a block level element
                     //if (!($element instanceof BlockInterface)) {
-                    //    $element = new BlockParagraph($element);
+                    //    $element = new Element\Paragraph($element);
                     //}
                     $writer->processElement($td, $element);
                 }
