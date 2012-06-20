@@ -36,27 +36,31 @@ class Paragraph extends Element implements ParagraphInterface, BlockInterface
             $elements = array( $elements );
         }
         if ($elements) {
-            for ($i=0, $j=count($elements); $i < $j; $i++) {
-                $arg = $elements[$i];
-                if ($arg instanceof ElementInterface) {
-                    if ($arg instanceof TextRunInterface or $arg instanceof LinkInterface) {
-                        $this->elements[] = $arg;
-                    } else {
-                        // Any other element is automatically wrapped
-                        $this->elements[] = new TextRun($arg);
-                    }
-                } elseif (is_string($arg)) {
-                    // Plain strings are converted to TextRun's
-                    $this->elements[] = new TextRun($arg);
-                } else {
-                    $type = gettype($arg);
-                    if ($type == 'object') {
-                        $type = get_class($arg);
-                    }
-                    throw new \UnexpectedValueException("Element type not an instance of \"ElementInterface\". Got \"$type\" instead.");
-                }
+            foreach ($elements as $e) {
+                $this->addElement($e);
             }
         }
     }
     
+    public function addElement($element)
+    {
+        if ($element instanceof ElementInterface) {
+            if (($element instanceof TextRunInterface) or
+                ($element instanceof LinkInterface)) {
+                $this->elements[] = $element;
+            } else {
+                // Any other element is automatically wrapped
+                $this->elements[] = new TextRun($element);
+            }
+        } elseif (is_string($element)) {
+            // Plain strings are converted to TextRun's
+            $this->elements[] = new TextRun($element);
+        } else {
+            $type = gettype($element);
+            if ($type == 'object') {
+                $type = get_class($element);
+            }
+            throw new \UnexpectedValueException("Element type not an instance of \"ElementInterface\". Got \"$type\" instead.");
+        }
+    }
 }

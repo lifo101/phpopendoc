@@ -34,6 +34,13 @@ interface ElementInterface
     public function getInterface();
 
     /**
+     * Add a child element
+     *
+     * @param ElementInterface $element Child element to add
+     */
+    public function addElement($element);
+
+    /**
      * Returns all child elements
      *
      * @return array An array of child content elements.

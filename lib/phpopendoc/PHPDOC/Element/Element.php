@@ -74,6 +74,14 @@ class Element implements ElementInterface
         return count($this->properties) > 0;
     }
 
+    public function addElement($element)
+    {
+        if (!($element instanceof ElementInterface)) {
+            throw new ElementException("Argument 1 passed to " . __METHOD__ . " must implement ElementInterface");
+        }
+        $this->elements[] = $element;
+    }
+
     public function getElements()
     {
         return $this->elements;
