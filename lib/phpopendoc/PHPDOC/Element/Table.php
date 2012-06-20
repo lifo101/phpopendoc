@@ -73,11 +73,17 @@ class Table extends Element implements TableInterface, BlockInterface
      */
     private $parentTbl;
     
+    /**
+     * @var array A list of default properties for rows and cells
+     */
+    private $defaults;
+
     public function __construct($properties = null)
     {
         parent::__construct($properties);
         $this->grid = array();
         $this->rows = array();
+        $this->defaults = array();
         $this->rowIdx = -1;
         $this->context = self::CONTEXT_TABLE;
     }
@@ -199,7 +205,7 @@ class Table extends Element implements TableInterface, BlockInterface
         $this->context = self::CONTEXT_ROW;
         $this->rowIdx += 1;
         $this->rows[ $this->rowIdx ] = array(
-            'properties' => $this->_createProperties($properties),
+            'properties' => $this->_createProperties($properties, 'row'),
             'cells' => array()
         );
         $this->rowRef =& $this->rows[ $this->rowIdx ];
@@ -221,7 +227,7 @@ class Table extends Element implements TableInterface, BlockInterface
         $this->context = self::CONTEXT_CELL;
         
         $this->rowRef['cells'][] = array(
-            'properties' => $this->_createProperties($properties),
+            'properties' => $this->_createProperties($properties, 'cell'),
             'elements' => array(),
         );
         $this->cellRef =& $this->rowRef['cells'][ count($this->rowRef['cells']) - 1 ];
@@ -250,18 +256,27 @@ class Table extends Element implements TableInterface, BlockInterface
         }
         
         foreach ($elements as $e) {
-            //if (!($e instanceof BlockInterface)) {
-            //    $e = new Paragraph($e);
-            //}
-            if (!($e instanceof ElementInterface)) {
-                $e = new Text($e);
+            if (!($e instanceof BlockInterface)) {
+                $e = new Paragraph($e);
             }
+            //if (!($e instanceof ElementInterface)) {
+            //    $e = new Text($e);
+            //}
             $this->cellRef['elements'][] = $e;
         }
         
         return $this;
     }
-    
+
+    /**
+     * Shortcut for enabling the "cantSplit" row property for all rows
+     */
+    public function cantSplit($val = true)
+    {
+        $this->rowDefaults(array('cantSplit' => (bool)$val));
+        return $this;
+    }
+
     public function skipBefore($count)
     {
         if ($count) {
@@ -323,7 +338,49 @@ class Table extends Element implements TableInterface, BlockInterface
         
         return $this;
     }
-    
+
+    /**
+     * Set row property defaults.
+     *
+     * Any new row will inherit the default properties defined.
+     */
+    public function rowDefaults($properties)
+    {
+        if (!($properties instanceof PropertiesInterface)) {
+            $properties = $this->_createProperties($properties);
+        }
+        if (!isset($this->defaults['row'])) {
+            $this->defaults['row'] = $properties;
+        } else {
+            // merge new defaults to existing
+            foreach ($properties as $k => $v) {
+                $this->defaults['row'][$k] = $v;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Set cell property defaults.
+     *
+     * Any new cell will inherit the default properties defined.
+     */
+    public function cellDefaults($properties)
+    {
+        if (!($properties instanceof PropertiesInterface)) {
+            $properties = $this->_createProperties($properties);
+        }
+        if (!isset($this->defaults['cell'])) {
+            $this->defaults['cell'] = $properties;
+        } else {
+            // merge new defaults to existing
+            foreach ($properties as $k => $v) {
+                $this->defaults['cell'][$k] = $v;
+            }
+        }
+        return $this;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -360,13 +417,22 @@ class Table extends Element implements TableInterface, BlockInterface
      * @internal Creates a new Properties object
      * @throws ElementException
      */    
-    private function _createProperties($properties = array())
+    private function _createProperties($properties = array(), $defaults = null)
     {
         if (is_array($properties) or $properties === null) {
             $properties = new Properties($properties);
         }
         if (!($properties instanceof PropertiesInterface)) {
             throw new ElementException("Invalid properties object. Must be a PropertiesInterface.");
+        }
+
+        // assign defaults; but do not overwrite existing keys
+        if (isset($this->defaults[$defaults])) {
+            foreach ($this->defaults[$defaults] as $k => $v) {
+                if (!isset($properties[$k])) {
+                    $properties[$k] = $v;
+                }
+            }
         }
         return $properties;
     }
