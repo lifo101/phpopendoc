@@ -26,6 +26,6 @@ abstract class Link
             }
         }
 
-        $writer->processNode($node, $element);
+        $writer->processChildren($node, $element);
     }
 }

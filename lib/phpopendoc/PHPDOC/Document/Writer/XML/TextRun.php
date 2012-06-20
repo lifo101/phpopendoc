@@ -24,6 +24,6 @@ abstract class TextRun
             }
         }
 
-        $writer->processNode($node, $element);
+        $writer->processChildren($node, $element);
     }
 }

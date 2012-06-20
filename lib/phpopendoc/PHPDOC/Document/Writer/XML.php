@@ -211,7 +211,7 @@ class XML implements WriterInterface
                     }
                 }
                 $headers->appendChild($head);
-                $this->processNode($head, $h);
+                $this->processChildren($head, $h);
             }
         }
         if ($headers->hasChildNodes()) {
@@ -230,7 +230,7 @@ class XML implements WriterInterface
                     }
                 }
                 $footers->appendChild($foot);
-                $this->processNode($foot, $h);
+                $this->processChildren($foot, $h);
             }
         }
         if ($footers->hasChildNodes()) {
@@ -240,45 +240,56 @@ class XML implements WriterInterface
         $content = $this->dom->createElement('body');
         $node->appendChild($content);
 
-        $this->processNode($content, $section);
+        $this->processChildren($content, $section);
     }
 
     /**
-     * Process an individual element
+     * Process an element's children
      *
      * @param \DOMNode         $root    The DOM node to attach elements to.
      * @param ElementInterface $element The element to process
      */
-    public function processNode(\DOMNode $root, $element)
+    public function processChildren(\DOMNode $root, $element)
     {
         // process all children within the element ...
         foreach ($element->getElements() as $child) {
-            // determine the base name of the element (without namespace)
-            $name = get_class($child);
-            $name = substr($name, strrpos($name, '\\')+1);
+            $this->processElement($root, $child);
+        }
+    }
 
-            // have processor class process the element
-            $processed = false;
-            foreach ($this->classPaths as $class) {
-                $className = $class . '\\' . $name;
-                if (class_exists($className)) {
-                    $className::process($this, $root, $child);
-                    $processed = true;
-                    break;
-                }
+    /**
+     * Process a single element
+     * 
+     * @param \DOMNode         $root    The DOM node to attach elements to.
+     * @param ElementInterface $element The element to process
+     */
+    public function processElement(\DOMNode $root, $element)
+    {
+        // determine the base name of the element (without namespace)
+        $name = get_class($element);
+        $name = substr($name, strrpos($name, '\\')+1);
+
+        // have processor class process the element
+        $processed = false;
+        foreach ($this->classPaths as $class) {
+            $className = $class . '\\' . $name;
+            if (class_exists($className)) {
+                $className::process($this, $root, $element);
+                $processed = true;
+                break;
             }
+        }
 
-            if (!$processed) {
-                if ($this->throwSaveException) {
-                    throw new SaveException("Element processor for \"$name\" not found in \"$className\"");
-                } else {
-                    trigger_error("Element processor for \"$name\" not found in \"$className\"", E_USER_WARNING);
-                    return;
-                }
+        if (!$processed) {
+            if ($this->throwSaveException) {
+                throw new SaveException("Element processor for \"$name\" not found in \"$className\"");
+            } else {
+                trigger_error("Element processor for \"$name\" not found in \"$className\"", E_USER_WARNING);
+                return;
             }
         }
     }
-    
+
     /**
      * Configures the writer to throw SaveException on errors.
      *

@@ -24,6 +24,6 @@ abstract class Paragraph
             }
         }
 
-        $writer->processNode($node, $element);
+        $writer->processChildren($node, $element);
     }
 }
