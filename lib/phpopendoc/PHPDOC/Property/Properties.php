@@ -49,4 +49,9 @@ class Properties extends PropertyBag implements PropertiesInterface
         return count($this) > 0;
     }
 
+    public function clear()
+    {
+        $this->properties = array();
+    }
+
 }

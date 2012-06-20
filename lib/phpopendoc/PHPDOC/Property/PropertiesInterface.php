@@ -50,4 +50,9 @@ interface PropertiesInterface
      * Returns true if any properties are present.
      */
     public function hasProperties();
+
+    /**
+     * Clears all properties currently set.
+     */
+    public function clear();
 }
