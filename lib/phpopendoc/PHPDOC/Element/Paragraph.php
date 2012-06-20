@@ -26,7 +26,7 @@ use PHPDOC\Property\Properties;
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class Paragraph extends Element implements ParagraphInterface
+class Paragraph extends Element implements ParagraphInterface, BlockInterface
 {
     
     public function __construct($elements = null, $properties = null)
