@@ -47,10 +47,10 @@ abstract class Translator
      * For example:
      *      pt2twip(10)
      */
-    public static function __callStatic($name, $arg)
-    {
-        // @todo Implement __callStatic()
-    }
+    //public static function __callStatic($name, $arg)
+    //{
+    //    // @todo Implement __callStatic()
+    //}
 
     /**
      * Return the "twips" of the value given. The type of unit to convert is
@@ -119,6 +119,14 @@ abstract class Translator
     public static function pointToInch($pt)
     {
         return $pt / self::$DPI;
+    }
+
+    /**
+     * This is just a rough (and bad estimate)
+     */
+    public static function pixelToTwip($px)
+    {
+        return $px * 15;
     }
 
     public static function pixelToCM($px)
