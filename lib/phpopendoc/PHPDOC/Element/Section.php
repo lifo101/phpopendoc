@@ -216,6 +216,41 @@ class Section implements SectionInterface
         return count($return) == 1 ? $return[0] : $return;
     }
 
+    public function setProperties($properties)
+    {
+        if (is_array($properties)) {
+            $properties = new Properties($properties);
+        }
+        if (!($properties instanceof PropertiesInterface)) {
+            $type = gettype($properties);
+            if ($type == 'object') {
+                $type = get_class($properties);
+            }
+            throw new \InvalidArgumentException("Unexpected properties type of \"$type\" given. Expected PropertiesInterface or array.");
+        }
+        $this->properties = $properties;
+    }
+
+    public function getProperties()
+    {
+        return $this->properties;
+    }
+    
+    public function hasProperties()
+    {
+        return count($this->properties) > 0;
+    }
+
+    public function getElements()
+    {
+        return $this->elements;
+    }
+    
+    public function hasElements()
+    {
+        return $this->elements and count($this->elements) > 0;
+    }
+
     /**
      * Return an iterator for the elements in the section
      * 
