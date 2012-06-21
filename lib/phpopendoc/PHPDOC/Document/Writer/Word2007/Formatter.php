@@ -8,9 +8,7 @@
  */
 namespace PHPDOC\Document\Writer\Word2007;
 
-use PHPDOC\Element\ElementInterface,
-    PHPDOC\Element\SectionInterface
-    ;
+use PHPDOC\Element\ElementInterface;
 
 /**
  * Formatter class will update a DOM node with the properties found on an
@@ -41,18 +39,15 @@ class Formatter
      */
     public function format($element, \DOMNode $node)
     {
-        if (!($element instanceof ElementInterface) and
-            !($element instanceof SectionInterface)) {
-            throw new \InvalidArgumentException("Argument 1 passed to " . __METHOD__
-                                                . '() must implement interface ElementInterface or SectionInterface. '
-                                                . 'Class ' . get_class($element) . ' given instead.');
+        if (!($element instanceof ElementInterface)) {
+            throw new \InvalidArgumentException(
+                "Argument 1 passed to " . __METHOD__ . '() must implement '
+                . 'interface ElementInterface. '
+                . 'Class ' . get_class($element) . ' given instead.'
+            );
         }
         
-        if ($element instanceof ElementInterface) {
-            $interface = $element->getInterface();
-        } else {
-            $interface = 'SectionInterface';
-        }
+        $interface = $element->getInterface();
 
         // instantiate the formatter class, if needed
         if (!isset($this->cache[$interface])) {

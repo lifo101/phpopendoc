@@ -10,21 +10,8 @@ namespace PHPDOC\Element;
 
 // @codeCoverageIgnoreStart 
 
-interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable
+interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable, ElementInterface
 {
-
-    /**
-     * Returns all child elements
-     * 
-     * The consumer will take this array of elements and generate the required
-     * output to produce the section within the document.
-     */
-    public function getElements();
-
-    /**
-     * Returns true if the section has any child elements
-     */
-    public function hasElements();
 
     /**
      * Returns the internal name of the Section.
@@ -77,21 +64,4 @@ interface SectionInterface extends \IteratorAggregate, \ArrayAccess, \Countable
      * Return defined footers
      */
     public function getFooters();
-
-    /**
-     * Sets the properties for the element.
-     *
-     * @param mixed $properties Can be an array or an instance of PropertyInterface
-     */
-    public function setProperties($properties);
-    
-    /**
-     * Returns all properties for the element.
-     */
-    public function getProperties();
-    
-    /**
-     * Returns true if the element has any properties
-     */
-    public function hasProperties();
 }

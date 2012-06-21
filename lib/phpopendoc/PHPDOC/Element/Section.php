@@ -43,8 +43,13 @@ class Section implements SectionInterface
         }
     }
     
+    public function getInterface()
+    {
+        return get_class($this) . 'Interface';
+    }
+
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getName()
     {
@@ -52,7 +57,7 @@ class Section implements SectionInterface
     }
     
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function setName($name)
     {
@@ -74,18 +79,10 @@ class Section implements SectionInterface
             mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535)
         );
     }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function getElements()
-    {
-        return $this->elements;
-    }
 
-    public function hasElements()
+    public function addElement($element)
     {
-        return count($this->elements) > 0;
+        return $this->set($element);
     }
     
     public function addHeader($type = null, HeaderFooterInterface $head = null)
@@ -194,15 +191,10 @@ class Section implements SectionInterface
         }
         $return = array();
         foreach ($value as $element) {
-            // @TODO This needs to be smarter to detect other elements, for
-            //       example, If I add an Image outside of a paragraph it needs
-            //       to be wrapped automatically as well...
-            // @TODO Alternate: Instead of performing this logic, I could
-            //       blindly add elements and then allow the Document\Writer
-            //       to handle it as-needed. That might make more sense.
-            if (is_string($element)) {
-                $element = new Paragraph($element);
-            } elseif (($element instanceof TextInterface) or ($element instanceof TextRunInterface)) {
+            // All elements must be wrapped in a block element
+            if (is_string($element)
+                or ($element instanceof LinkInterface)  // Link extends Paragraph but is not truly a block
+                or !($element instanceof BlockInterface)) {
                 $element = new Paragraph($element);
             } elseif (!($element instanceof ElementInterface)) {
                 $type = gettype($element);
@@ -224,40 +216,6 @@ class Section implements SectionInterface
         return count($return) == 1 ? $return[0] : $return;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function setProperties($properties)
-    {
-        if (is_array($properties)) {
-            $properties = new Properties($properties);
-        }
-        if (!($properties instanceof PropertiesInterface)) {
-            $type = gettype($properties);
-            if ($type == 'object') {
-                $type = get_class($properties);
-            }
-            throw new \InvalidArgumentException("Unexpected properties type of \"$type\" given. Expected PropertiesInterface or array.");
-        }
-        $this->properties = $properties;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getProperties()
-    {
-        return $this->properties;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function hasProperties()
-    {
-        return count($this->properties) > 0;
-    }
-    
     /**
      * Return an iterator for the elements in the section
      * 
