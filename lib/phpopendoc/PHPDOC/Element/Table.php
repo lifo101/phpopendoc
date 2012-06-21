@@ -118,7 +118,9 @@ class Table extends Element implements TableInterface, BlockInterface
      *
      * This is a shortcut that makes it easier to nest tables. In order to jump
      * back to the previous table in the current chain you must call ->end() to
-     * end the nested table.
+     * end the nested table. When using Table::create() and you have nested
+     * tables always be sure to call ::end() otherwise the last nested table
+     * will be the one assigned to your variable and not the root table.
      * 
      * @param mixed $properties Table level properties
      * @return Table Returns a new Table instance.
@@ -185,7 +187,7 @@ class Table extends Element implements TableInterface, BlockInterface
      */
     public function col($width)
     {
-        // @todo Is this really nessecary? Technically speaking a gridCol can
+        // @todo Is this really necessary? Technically speaking a gridCol can
         //       can be defined anywhere w/o affecting the current context.
         //       But for now lets keep the interface the same as other contexts.
         if (!$this->context == self::CONTEXT_GRID) {
@@ -205,10 +207,6 @@ class Table extends Element implements TableInterface, BlockInterface
         $this->context = self::CONTEXT_ROW;
         $this->rowIdx += 1;
         $this->rows[ $this->rowIdx ] = new TableRow($this->_createProperties($properties, 'row'));
-        //$this->rows[ $this->rowIdx ] = array(
-        //    'properties' => $this->_createProperties($properties, 'row'),
-        //    'cells' => array()
-        //);
         $this->rowRef =& $this->rows[ $this->rowIdx ];
         
         return $this;
@@ -227,11 +225,6 @@ class Table extends Element implements TableInterface, BlockInterface
         }
         $this->context = self::CONTEXT_CELL;
 
-        //$this->rowRef['cells'][] = array(
-        //    'properties' => $this->_createProperties($properties, 'cell'),
-        //    'elements' => array(),
-        //);
-        //$this->cellRef =& $this->rowRef['cells'][ count($this->rowRef['cells']) - 1 ];
         $this->cellRef = new TableCell($this->_createProperties($properties, 'cell'));
         $this->rowRef->addElement($this->cellRef);
         
@@ -259,13 +252,9 @@ class Table extends Element implements TableInterface, BlockInterface
         }
         
         foreach ($elements as $e) {
-            if (!($e instanceof BlockInterface)) {
+            if (($e instanceof LinkInterface) or !($e instanceof BlockInterface)) {
                 $e = new Paragraph($e);
             }
-            //if (!($e instanceof ElementInterface)) {
-            //    $e = new Text($e);
-            //}
-            //$this->cellRef['elements'][] = $e;
             $this->cellRef->addElement($e);
         }
         
@@ -315,17 +304,9 @@ class Table extends Element implements TableInterface, BlockInterface
                 $prop = $this->getProperties();
                 break;
             case self::CONTEXT_ROW:
-                //if (!$this->rowRef['properties']) {
-                //    $this->rowRef['properties'] = $this->_createProperties();
-                //}
-                //$prop = $this->rowRef['properties'];
                 $prop = $this->rowRef->getProperties();
                 break;
             case self::CONTEXT_CELL:
-                //if (!$this->cellRef['properties']) {
-                //    $this->cellRef['properties'] = $this->_createProperties();
-                //}
-                //$prop = $this->cellRef['properties'];
                 $prop = $this->cellRef->getProperties();
                 break;
             case self::CONTEXT_GRID:
