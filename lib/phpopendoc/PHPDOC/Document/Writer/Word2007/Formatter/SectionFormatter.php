@@ -68,6 +68,9 @@ class SectionFormatter extends Shared
             if ($val['orient'] == 'landscape') {
                 $val['w'] = 11;
                 $val['h'] = 8.5;
+            } else {
+                $val['w'] = 8.5;
+                $val['h'] = 11;
             }
         }
 
