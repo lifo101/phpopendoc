@@ -4,11 +4,11 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
-// @codeCoverageIgnoreStart 
+// @codeCoverageIgnoreStart
 
 /**
  * ImageInterface defines the interface for inline images.
@@ -25,7 +25,7 @@ interface ImageInterface
      * @param string $dest Destination filename.
      */
     public function save($dest);
-    
+
     /**
      * Set the source file/stream for the image
      *
@@ -39,18 +39,34 @@ interface ImageInterface
     public function getSource();
 
     /**
+     * Return the raw data for the image
+     *
+     * @return Returns the raw data buffer of the image
+     */
+    public function getData();
+
+    /**
+     * Return true if the image is a file.
+     *
+     * It's possible for images to be a "data:image/XXX;..." string buffers
+     *
+     * @return boolean Returns true if the image source points to a file.
+     */
+    public function isFile();
+
+    /**
      * Return the width of the image
      */
     public function getWidth();
-    
+
     /**
      * Return the height of the image
      */
     public function getHeight();
-    
+
     /**
      * Return the mimetype of the image
      */
     public function getContentType();
-    
+
 }

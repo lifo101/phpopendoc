@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -34,7 +34,7 @@ class Image extends Element implements ImageInterface
      * @internal
      */
     private $cache;
-    
+
     /**
      * Instantiate a new Image object.
      *
@@ -55,7 +55,7 @@ class Image extends Element implements ImageInterface
         $src = $this->getSource();
         // @todo Implement save feature ...
     }
-    
+
     /**
      * Update the image cache
      * @internal
@@ -75,7 +75,7 @@ class Image extends Element implements ImageInterface
             'channels' => $cache['channels']
         );
     }
-    
+
 
     /**
      * {@inheritdoc}
@@ -89,7 +89,7 @@ class Image extends Element implements ImageInterface
         // @codeCoverageIgnoreEnd
         return $this->cache['width'];
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -102,7 +102,7 @@ class Image extends Element implements ImageInterface
         // @codeCoverageIgnoreEnd
         return $this->cache['height'];
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -115,7 +115,7 @@ class Image extends Element implements ImageInterface
         // @codeCoverageIgnoreEnd
         return $this->cache['mime'];
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -132,7 +132,36 @@ class Image extends Element implements ImageInterface
         }
         return $ext;
     }
-    
+
+    public function getData()
+    {
+        // @codeCoverageIgnoreStart
+        if (!$this->cache) {
+            $this->updateCache();
+        }
+        // @codeCoverageIgnoreEnd
+
+        if ($this->isFile()) {
+            return file_get_contents($this->source);
+
+        } elseif (substr($this->source, 0, 5) == 'data:') {
+            list($proto, $data) = explode(',', $this->source, 2);
+            list($mime, $enc) = explode(';', substr($proto, 5), 2);
+            $decode = $enc . '_decode';
+            if (!function_exists($decode)) {
+                throw new ElementException("Unknown encoding method \"$enc\" given");
+            }
+            return $decode($data);
+        } else {
+            throw new ElementException("Invalid data url for image");
+        }
+    }
+
+    public function isFile()
+    {
+        return substr($this->source, 0, 5) != 'data:';
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -140,7 +169,7 @@ class Image extends Element implements ImageInterface
     {
         return $this->source;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -153,15 +182,15 @@ class Image extends Element implements ImageInterface
 
     /**
      * @codeCoverageIgnore
-     */    
+     */
     public function hasElements()
     {
         return false;
     }
-    
+
     /**
      * @codeCoverageIgnore
-     */    
+     */
     public function getElements()
     {
         return array();
