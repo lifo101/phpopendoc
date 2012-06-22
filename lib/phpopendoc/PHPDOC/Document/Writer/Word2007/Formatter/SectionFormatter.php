@@ -4,180 +4,98 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Document\Writer\Word2007\Formatter;
 
 use PHPDOC\Element\ElementInterface,
-    PHPDOC\Element\SectionInterface,
-    PHPDOC\Document\Writer\Exception\SaveException,
-    PHPDOC\Document\Writer\Word2007\Translator
+    PHPDOC\Document\Writer\Word2007\Translator,
+    PHPDOC\Document\Writer\Exception\SaveException
     ;
 
 /**
  * Creates properties for sections <w:sectPr>
  */
-class Section extends Shared
+class SectionFormatter extends Shared
 {
-    
+
     /**
-     * Property map (used for simple properties)
+     * Property aliases
      */
-    private static $propertyMap = array(
-        'type'          => 'type',
-        
+    private static $aliases = array(
         'page'          => 'pgSz',
         'pageSize'      => 'pgSz',
         'pgsz'          => 'pgSz',
-        'pgSz'          => 'pgSz',
-
-        'orient'        => 'orient',
-        'orientation'   => 'orient',
-        
-        'height'        => 'h',
-        'h'             => 'h',
-        
-        'width'         => 'w',
-        'w'             => 'w',
-        
-        'code'          => 'code',
-        
-        'top'           => 'top',
-        'bottom'        => 'bottom',
-        'left'          => 'left',
-        'right'         => 'right',
+        'grid'          => 'docGrid',
+        'valign'        => 'vAlign'
     );
 
-    private static $localMap = array();
-    
-    private static $translateMap = array(
-        'pgSz' => array(
-            'w'         => 'translate_dimension',
-            'h'         => 'translate_dimension',
-            'orient'    => null,
-            'code'      => null
-        ),
-        'pgMar' => array(
-            
-        ),
-        'pgBorders' => array(
-            
-        )
-    );
-    
-    private $pageSize;
-    private $pageSizeProp;
-    private $borders;
-    private $margins;
-
-    public function __construct()
+    protected function initMap()
     {
-        parent::__construct(self::$propertyMap);
+        parent::initMap(self::$aliases);
+        $this->map = array(
+            'bidi'                  => 'bool',
+            'cols'                  => 'columns',
+            'docGrid'               => 'grid',
+            'formProt'              => 'bool',
+            'lnNumType'             => 'linenum',
+            'pgBorders'             => 'border',
+            'pgMar'                 => 'margin',
+            'pgNumType'             => 'pagenum',
+            'pgSz'                  => 'pagesize',
+            'rtlGutter'             => 'bool',
+            'textDirection'         => 'text',
+            'type'                  => 'type',
+            'vAlign'                => 'text'
+        ) + $this->map;
     }
 
     /**
-     *
+     * Process page size
      */
-    //public function format($element, \DOMNode $node)
-    //{
-    //    if (!($element instanceof ElementInterface) and
-    //        !($element instanceof SectionInterface)) {
-    //        throw new \InvalidArgumentException("Argument 1 passed to " . __METHOD__
-    //                                            . '() must implement interface ElementInterface or SectionInterface. '
-    //                                            . 'Class ' . get_class($element) . ' given instead.');
-    //    }
-    //
-    //    if (!$element->hasProperties()) {
-    //        return false;
-    //    }
-    //
-    //    $props = $element->getProperties(); //$this->normalizeProperties($element->getProperties());
-    //    
-    //    $modified = false;
-    //    foreach ($props as $key => $val) {
-    //        $name = $this->localLookup($key);
-    //        if ($name !== null) {
-    //            $method = 'process_' . $name;
-    //            if (method_exists($this, $method)) {
-    //                if ($this->$method($val, $node)) {
-    //                    $modified = true;
-    //                }
-    //            }
-    //            continue;
-    //        }
-    //        
-    //        //$name = $this->lookup($key);
-    //        //if ($name === null) {   // invalid property
-    //        //    continue;
-    //        //}
-    //        //
-    //        //// do not add property if the value is null
-    //        //if ($val !== null) {
-    //        //    $prop = $node->ownerDocument->createElement('w:' . $name);
-    //        //    if ($this->translate($name, $val, $prop)) {
-    //        //        $node->appendChild($prop);
-    //        //        $modified = true;
-    //        //    }
-    //        //}
-    //    }
-    //
-    //    if ($this->pageSize->hasAttributes()) {
-    //        $node->appendChild($this->pageSize);
-    //    }
-    //    
-    //    return $modified;
-    //}
-
-    /**
-     * Process <w:pgSz/> properties
-     */
-    protected function process_pgSz($name, $prop, $element, $node)
+    protected function process_pagesize($name, $val, ElementInterface $element, \DOMNode $root)
     {
-        if (!is_array($prop)) {
-            return false;
-        }
-        
-        if (!$this->pageSize) {
-            $this->pageSize = $node->ownerDocument->createElement('w:pgSz');
-            $node->appendChild($this->pageSize);
-            $this->pageSizeProp = $prop;
-        }
+        static $attrs = array('w', 'h', 'orient', 'code');
+        static $aliases = array(
+            'width'       => 'w',
+            'height'      => 'h',
+            'orientation' => 'orient'
+        );
 
-        foreach ($prop as $key => $val) {
-            $name = $this->lookup($key);
-            if ($name !== null) {
-                $this->translate($name, $val, $this->pageSize, self::$translateMap['pgSz']);
+        // assume the orientation is being set
+        if (!is_array($val)) {
+            $val = array( 'orient' => $val );
+            if ($val['orient'] == 'landscape') {
+                $val['w'] = 11;
+                $val['h'] = 8.5;
             }
         }
+
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+
+        foreach ($val as $key => $v) {
+            $attr = $this->lookupAlias($key, $aliases);
+            if (!in_array($attr, $attrs)) {
+                continue;
+            }
+
+            if ($attr == 'w' or $attr == 'h') {
+                $v = Translator::inchToTwip($v);
+            }
+
+            $prop->appendChild(new \DOMAttr($attr, $v));
+        }
+
+        $root->appendChild($prop);
 
         return true;
     }
 
-    //protected function translate_null($name, $val, $node)
-    //{
-    //    $node->appendChild(new \DOMAttr('w:'.$name, $val));
-    //}
-
-    protected function translate_dimension($name, $val, $node)
-    {
-        $node->appendChild(new \DOMAttr('w:'.$name, Translator::inchToTwip($val)));
-    }
-
-    protected function translate_orient($name, $val, $node)
-    {
-        static $valid = array('landscape', 'portrait');
-        
-        if ($val !== null and !in_array($val, $valid)) {
-            throw new SaveException("Invalid type value \"$val\". Must be one of: " . implode(',',$valid));
-        }
-
-        if ($val !== null) {
-            
-            $node->appendChild(new \DOMAttr('w:'.$name, $val));
-        }
-    }
-
-    protected function translate_type($name, $val, $node)
+    /**
+     * Process section type
+     */
+    protected function process_type($name, $val, ElementInterface $element, \DOMNode $root)
     {
         static $valid = array(
             'continuous', 'evenPage', 'oddPage', 'nextPage', 'nextColumn',
@@ -192,15 +110,6 @@ class Section extends Shared
             throw new SaveException("Invalid type value \"$val\". Must be one of: " . implode(',',$valid));
         }
 
-        return $this->appendSimpleValue($node, $val);
+        return $this->appendSimpleValue($root, $name, $val);
     }
-
-    public function localLookup($name)
-    {
-        if (isset(self::$localMap[$name])) {
-            return self::$localMap[$name];
-        }
-        return null;
-    }
-
 }

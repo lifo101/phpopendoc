@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Document\Writer\Word2007;
 
@@ -23,46 +23,38 @@ use PHPDOC\Element\ElementInterface;
  */
 class Formatter
 {
-    
+
     private $cache;
-    
+
     public function __construct()
     {
         $this->cache = array();
     }
-    
+
     /**
      * Factory method to set the proper properties for the element given.
      *
      * @param mixed     $element The element to extract properties from
      * @param \DOMNode  $node    The DOMNode to append properties to
      */
-    public function format($element, \DOMNode $node)
+    public function format(ElementInterface $element, \DOMNode $node)
     {
-        if (!($element instanceof ElementInterface)) {
-            throw new \InvalidArgumentException(
-                "Argument 1 passed to " . __METHOD__ . '() must implement '
-                . 'interface ElementInterface. '
-                . 'Class ' . get_class($element) . ' given instead.'
-            );
-        }
-        
         $interface = $element->getInterface();
 
         // instantiate the formatter class, if needed
         if (!isset($this->cache[$interface])) {
             $class = str_replace('Interface', '', $interface);
-            if (($pos = strrpos($class, '\\')) !== false) {    // remove namespace
+            if (($pos = strrpos($class, '\\')) !== false) {     // remove namespace
                 $class = substr($class, $pos+1);
             }
-            $class = __CLASS__ . '\\' . $class;
+            $class = __CLASS__ . '\\' . $class . 'Formatter';   // Formatter\ElementFormatter
             if (class_exists($class)) {
                 $this->cache[$interface] = new $class();
             } else {
                 $this->cache[$interface] = null;
             }
         }
-        
+
         if ($this->cache[$interface]) {
             return $this->cache[$interface]->format($element, $node);
         }

@@ -4,146 +4,155 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Document\Writer\Word2007\Formatter;
 
-use PHPDOC\Element\ElementInterface,
-    PHPDOC\Element\SectionInterface
-    ;
+use PHPDOC\Element\ElementInterface;
 
 /**
  * Shared property formats
  */
 class Shared
 {
-    private $propertyMap;
-    
-    public function __construct($propertyMap = null) {
-        $this->propertyMap = array();
-        if ($propertyMap) {
-            $this->propertyMap = $propertyMap;
+    protected $map;
+    private $aliases;
+
+    public function __construct() {
+        $this->initMap();
+    }
+
+    /**
+     * Initialize the property map
+     *
+     * Subclasses should override this to provide a property map.
+     */
+    protected function initMap($aliases = null)
+    {
+        $this->map = array();
+        $this->aliases = array();
+        if (is_array($aliases) and count($aliases)) {
+            $this->aliases = $aliases;
         }
     }
-    
+
     /**
      * Create a new properties DOM object for the element.
      *
      * @param mixed     $element The element to extract properties from
-     * @param \DOMNode  $node    The DOMNode to interface with
+     * @param \DOMNode  $root    The DOMNode to interface with
      * @return boolean  Return true if any properties were processed.
      */
-    public function format($element, \DOMNode $node)
+    public function format(ElementInterface $element, \DOMNode $root)
     {
-        if (!($element instanceof ElementInterface) and
-            !($element instanceof SectionInterface)) {
-            throw new \InvalidArgumentException("Argument 1 passed to " . __METHOD__
-                                                . '() must implement interface ElementInterface or SectionInterface. '
-                                                . 'Class ' . get_class($element) . ' given instead.');
-        }
-
-        if (!$element->hasProperties()) {
-            return false;
-        }
-
         $modified = false;
-        foreach ($element->getProperties() as $key => $val) {
-            $name = $this->lookup($key);
-            if ($name === null) {   // invalid property
-                // @todo Raise an exception? Warning? Do anything? ...
-                continue;
-            }
-
-            // if the value is processed then we can continue ...
-            if ($this->process($name, $val, $element, $node)) {
-                continue;
-            }
-            
-            // do not add property if the value is null
-            if ($val !== null) {
-                $prop = $node->ownerDocument->createElement('w:' . $name);
-                if ($this->translate($name, $val, $prop)) {
-                    $node->appendChild($prop);
+        foreach ($element->getProperties() as $name => $val) {
+            $type = $this->lookup($name);
+            if ($type) {
+                if ($this->process($type, $name, $val, $element, $root)) {
                     $modified = true;
                 }
             }
         }
-
-        //$modified = $this->finalize($element, $node, $modified);
         return $modified;
     }
 
-    //public function finalize($element, $node, $modified = false)
-    //{
-    //    // ...
-    //    return $modified;
-    //}
-
     /**
-     * Translate a property value and add it to the DOM node.
+     * Process a property
      *
-     * @param string $name The property name.
-     * @param string $val The property value.
-     * @param \DOMNode $node The DOM node to update.
+     * @param string           $type    The translation type.
+     * @param string           $name    The original property name.
+     * @param mixed            $val     The property value or array.
+     * @param ElementInterface $element The element being processed.
+     * @param \DOMNode         $root    The DOM node to update.
+     * @return boolean Return true if the property was processed
      */
-    public function translate($name, $val, $node, $map = null)
+    public function process($type, $name, $val, $element, $root)
     {
-        $method = 'translate_' . $name;
-        if ($map) {
-            if (isset($map[$name])) {
-                $method = $map[$name];
+        $ret = false;
+        $method = 'process_' . $type;
+        if (method_exists($this, $method)) {
+            $ret = $this->$method($this->lookupAlias($name), $val, $element, $root);
+            if (!is_bool($ret)) {
+                // failsafe for when I forget to return true from one of my
+                // process methods and i spend several minutes wondering why
+                // the property is not being saved to the document...
+                throw new \UnexpectedValueException(get_class($this) . "::$method did not return a boolean. Got " . gettype($ret) . " instead");
             }
+        } else {
+            // @todo Should an exception be thrown for unknown properties?
         }
-
-        if (method_exists($this, $method)) {
-            return $this->$method($name, $val, $node);
-        }
-        // @todo Might not be a good idea to allow values to fall through like this.
-        // If no specific translation is available then assume its a simple value.
-        return $this->appendSimpleValue($node, $val);
+        return $ret;
     }
 
     /**
-     * Process a property value.
+     * Process simple boolean property
      *
-     * @param string   $name    The property name.
-     * @param string   $val     The property value.
-     * @param mixed    $element The element being processed.
-     * @param \DOMNode $node    The DOM node to update.
+     * @param string           $name    The original property name.
+     * @param mixed            $val     The property value or array.
+     * @param ElementInterface $element The element being processed.
+     * @param \DOMNode         $root    The DOM node to update.
+     * @return boolean Return true if the property was processed
      */
-    public function process($name, $val, $element, $node)
+    protected function process_bool($name, $val, ElementInterface $element, \DOMNode $root)
     {
-        $method = 'process_' . $name;
-        if (method_exists($this, $method)) {
-            return $this->$method($name, $val, $element, $node);
-        }
-        return false;
+        return $this->appendSimpleValue($root, $name, $this->getOnOff($val));
+    }
+
+    protected function process_decimal($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        return $this->appendSimpleValue($root, $name, intval($val));
+    }
+
+    protected function process_text($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        return $this->appendSimpleValue($root, $name, $val);
     }
 
     /**
-     * Lookup a property name alias and return the true name for it.
+     * Lookup a property name and return the translation type for it
      *
+     * @return string The translation type
      * @param string $name The property name/alias to lookup
-     * @return string The true property name or the $name unchanged if not found.
      */
     public function lookup($name)
     {
-        if (isset($this->propertyMap[$name])) {
-            return $this->propertyMap[$name];
+        $name = $this->lookupAlias($name);
+        if (isset($this->map[$name])) {
+            return $this->map[$name];
         }
-        return null;
+        return $name;
     }
-    
+
     /**
-     * Assign a simple value to the node, <w:X val="..."/>
+     * Lookup a property alias
+     *
+     * @return Returns the original name if no alias is defined.
+     * @param string $name The original property name.
      */
-    public static function appendSimpleValue($node, $val, $key='w:val')
+    protected function lookupAlias($name, $aliases = null)
+    {
+        if (!$aliases) {
+            $aliases =& $this->aliases;
+        }
+        if (isset($aliases[$name])) {
+            return $aliases[$name];
+        }
+        return $name;
+    }
+
+    /**
+     * Assign a simple value to the root, <w:$name $key="$val"/>
+     */
+    public function appendSimpleValue(\DOMNode $root, $name, $val, $key='w:val')
     {
         if (is_bool($val)) {
             $val = self::getOnOff($val);
         }
         if ($val !== null and $val !== '') {
+            $node = $root->ownerDocument->createElement('w:' . $name);
             $node->appendChild(new \DOMAttr($key, $val));
+            $root->appendChild($node);
         }
         return true;
     }
@@ -151,7 +160,7 @@ class Shared
     /**
      * Return 'on', 'off' or null based on the value given.
      */
-    public static function getOnOff($value)
+    public function getOnOff($value)
     {
         if ($value === null) {
             return null;
