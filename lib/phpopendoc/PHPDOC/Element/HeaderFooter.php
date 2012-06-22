@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -33,25 +33,29 @@ class HeaderFooter extends Section implements HeaderFooterInterface
 {
     protected $position;
     protected $type;
-    
+
+    // @todo The type can actually only have 'default', 'even' and 'first'
+    //       according to the OOXML specs. document setting 'evenAndOddHeaders'
+    //       is used to make 'odd' page headers... it's kind of stupid really.
     public function __construct($position = 'header', $type = null, $properties = null)
     {
-        parent::__construct(null, $properties);
         if ($position != 'header' and $position != 'footer') {
             throw new \UnexpectedValueException("Invalid \$position \"$position\" specified. Must be \"header\" or \"footer\"");
         }
         $this->position = $position;
+
         if ($type === null or $type == 'both') {
             $type = 'default';
         }
         $this->type = $type;
+        parent::__construct($position . ':' . $type, $properties);
     }
-    
+
     public function getType()
     {
         return $this->type;
     }
-    
+
     public function getPosition()
     {
         return $this->position;

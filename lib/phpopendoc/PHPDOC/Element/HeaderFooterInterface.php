@@ -4,11 +4,11 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
-// @codeCoverageIgnoreStart 
+// @codeCoverageIgnoreStart
 
 /**
  * HeaderFooterInterface
@@ -20,9 +20,19 @@ namespace PHPDOC\Element;
 interface HeaderFooterInterface
 {
     /**
-     * Return the block type.
+     * Return the type
      *
-     * The block type will be "header" or "footer"
+     * The page type specifies which pages the hdr/ftr will appear. Odd, even
+     * or all pages.
+     *
      */
     public function getType();
+
+    /**
+     * Return the position
+     *
+     * The position will be "header" or "footer"
+     *
+     */
+    public function getPosition();
 }
