@@ -5,7 +5,11 @@ Microsoft Word 2007+ (docx format). Documents may also be saved as simple XML
 structures. The XML output could be read by other XML consumers or used in XSLT
 tranformations.
 
-__This library is in early development and does not actually work yet.__
+## Development Status
+
+__This library is in early development and does not actually produce working Word documents yet.__
+The XML writer class does actually work but the structure of the XML may change a few times before
+I finalize its structure. Right now its a hybrid of XHTML and WordML that I use for testing purposes.
 
 ## Synopsis
 
@@ -35,8 +39,10 @@ tests and have 100% code coverage.
 
 ## Examples
 
-_Note: The API is still unstable and **WILL** change._
+Note: The API is still unstable but I'm almost at the point where I don't expect the user visible API 
+to change much from what the examples show below.
 
+### Simple Document
 ```php
 <?php
 use PHPDOC\Document;
@@ -63,7 +69,36 @@ $sec->addHeader()->set("My Header");
 
 Writer\XML::saveDocument($doc); // output to STDOUT
 
-// .... API is still __extremely__ unstable
-
 ?>
+```
+
+### Simple Table
+```php
+<?php
+use PHPDOC\Document;
+use PHPDOC\Document\Writer;
+use PHPDOC\Element\Text;
+use PHPDOC\Element\Table;
+
+$doc = new Document;
+$sec = $doc->addSection();
+
+// The Table class makes it very easy to create very 
+// complex table structures including nested tables.
+$sec[] = Table::create()
+    ->row()
+        ->cell('R1C1')
+        ->cell('R1C2')
+        ->cell( new Text("Formatted...", array('b' => true)) )
+    ->row()
+        ->table()
+            ->row()
+                ->cell('nested table cell inside R2C1')
+        ->end()
+        ->cell('R2C2')
+        ->cell('R2C3')
+    ;
+
+Writer\XML::saveDocument($doc); // output to STDOUT
+
 ```
