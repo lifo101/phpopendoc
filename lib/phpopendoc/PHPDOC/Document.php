@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC;
 
@@ -27,13 +27,13 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     protected $sections;
     protected $currentSection;
     protected $properties;
-    
-    public function __construct()
+
+    public function __construct($properties = null)
     {
-        $this->properties = new Properties();
+        $this->properties = new Properties($properties);
         $this->sections = array();
     }
-    
+
     //public function setProperty($key, $value)
     //{
     //    $this->properties[$key] = $value;
@@ -53,8 +53,8 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     //    }
     //    return $this;
     //}
-    
-    
+
+
     /**
      * Add a new section to the document
      *
@@ -74,17 +74,17 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
         $this->sections[$this->currentSection] = $section;
         return $section;
     }
-    
+
     /**
      * Return true if the section exists
-     * 
+     *
      * @param string $name The section name
      */
     public function hasSection($name)
     {
         return array_key_exists($name, $this->sections);
     }
-    
+
     /**
      * Return all sections.
      */
@@ -92,7 +92,7 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     {
         return $this->sections;
     }
-    
+
     /**
      * Return a section by name or the current section if no name given.
      *
@@ -106,14 +106,14 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
             }
             $name = $this->currentSection;
         }
-        
+
         if (!array_key_exists($name, $this->sections)) {
             throw new \OutOfBoundsException("Unknown section name \"$name\"");
         }
-        
+
         return $this->sections[$name];
     }
-    
+
     /**
      * Remove a section by name.
      *
@@ -145,7 +145,7 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     {
         return count($this->sections);
     }
-    
+
     /**
      * Set property by key name
      *
@@ -167,7 +167,7 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
 
         return $this->addSection($value);
     }
-    
+
     /**
      * Determine if property exists by key name
      *
@@ -177,7 +177,7 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     {
         return $this->hasSection($ofs);
     }
-    
+
     /**
      * Remove property by key name
      *
@@ -187,7 +187,7 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     {
         unset($this->sections[$ofs]);
     }
-    
+
     /**
      * Get property by key name
      *
