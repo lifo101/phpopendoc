@@ -4,13 +4,22 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Document\Writer\Word2007;
 
 /**
  * Translator static class that provides various translations for converting
  * points into inches, twips, etc.
+ *
+ * twip         (dxa)
+ * point        (pt)
+ * half-point   (hp)
+ * milimeters   (mm)
+ * centimeters  (cm)
+ * pixel        (px)
+ * Fiftieths%   (th)
+ *
  *
  * @version 1.0
  * @since 1.0
@@ -20,7 +29,7 @@ abstract class Translator
 {
 
     public static $DPI  = 72;
-    
+
     const CM_PER_INCH   = 2.54;
 
     const EMU_PER_INCH  = 914400;
@@ -32,7 +41,7 @@ abstract class Translator
         'in'    => 'inch',
         'pt'    => 'point',
     );
-    
+
     public static function setDPI($dpi)
     {
         self::$DPI = $dpi;
@@ -61,7 +70,7 @@ abstract class Translator
      *
      * Values that do not have a unit suffix are guessed as:
      *      floats are assumed to be inches.
-     * 
+     *
      * @param mixed  $value   The unit value to translate.
      * @param string $default Default unit type to use (if not able to guess)
      */
@@ -79,7 +88,7 @@ abstract class Translator
     {
         return $pt * 2;
     }
-    
+
     public static function halfPointToPoint($pt)
     {
         return $pt / 2;
@@ -100,7 +109,7 @@ abstract class Translator
     {
         return $pt / 20;
     }
-    
+
     public static function twipToInch($dxa)
     {
         return $dxa / self::$DPI / 20;
@@ -133,12 +142,12 @@ abstract class Translator
     {
         return $px * self::CM_PER_INCH / self::$DPI;
     }
-    
+
     public static function cmToPixel($cm)
     {
         return $cm / self::CM_PER_INCH * self::$DPI;
     }
-    
+
     public static function pixelToEMU($px)
     {
         return $px * self::EMU_PER_PIXEL;
