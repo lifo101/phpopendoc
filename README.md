@@ -7,7 +7,7 @@ tranformations.
 
 ## Development Status
 
-__This library is in early development and does not actually produce working Word documents yet.__
+__This library is in early development but can now produce a working Word 2007 "docx" document (barely).__
 The XML writer class does actually work but the structure of the XML may change a few times before
 I finalize its structure. Right now its a hybrid of XHTML and WordML that I use for testing purposes.
 
