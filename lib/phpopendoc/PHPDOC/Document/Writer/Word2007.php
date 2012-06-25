@@ -265,7 +265,7 @@ class Word2007 implements WriterInterface
 
                 // add properties for the cell
                 $prop = $dom->createElement('w:tcPr');
-                if ($this->formatter->format($row, $prop)) {
+                if ($this->formatter->format($cell, $prop)) {
                     $tc->appendChild($prop);
                 }
 
@@ -355,6 +355,8 @@ class Word2007 implements WriterInterface
                               $imgId,
                               $element->getExtension()
             );
+            // make sure there's no leading slash
+            $target = ltrim($target, '/');
 
             if ($element->isFile()) {
                 $this->addFile($src, $target);
