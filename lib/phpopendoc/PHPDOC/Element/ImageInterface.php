@@ -56,13 +56,19 @@ interface ImageInterface
 
     /**
      * Return the width of the image
+     *
+     * @param bool $allowOverride If true the element properties 'width' will
+     *                            be returned instead of the actual size.
      */
-    public function getWidth();
+    public function getWidth($allowOverride = false);
 
     /**
      * Return the height of the image
+     *
+     * @param bool $allowOverride If true the element properties 'height' will
+     *                            be returned instead of the actual size.
      */
-    public function getHeight();
+    public function getHeight($allowOverride = false);
 
     /**
      * Return the mimetype of the image

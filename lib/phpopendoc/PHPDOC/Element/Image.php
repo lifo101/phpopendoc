@@ -80,8 +80,12 @@ class Image extends Element implements ImageInterface
     /**
      * {@inheritdoc}
      */
-    public function getWidth()
+    public function getWidth($allowOverride = false)
     {
+        if ($this->properties->has('width')) {
+            return $this->properties->get('width');
+        }
+
         // @codeCoverageIgnoreStart
         if (!$this->cache) {
             $this->updateCache();
@@ -93,8 +97,12 @@ class Image extends Element implements ImageInterface
     /**
      * {@inheritdoc}
      */
-    public function getHeight()
+    public function getHeight($allowOverride = false)
     {
+        if ($this->properties->has('height')) {
+            return $this->properties->get('height');
+        }
+
         // @codeCoverageIgnoreStart
         if (!$this->cache) {
             $this->updateCache();
