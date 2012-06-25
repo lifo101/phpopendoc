@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Document\Writer\Word2007\Formatter;
 
@@ -18,17 +18,19 @@ use PHPDOC\Element\ElementInterface,
  */
 class TableRowFormatter extends Shared
 {
-    
+
     /**
      * Property aliases
      */
     private static $aliases = array(
-        'align'     => 'jc',
-        'justify'   => 'jc',
-        'height'    => 'trHeight',
-        'spacing'   => 'tblCellSpacing',
+        'align'         => 'jc',
+        'justify'       => 'jc',
+        'height'        => 'trHeight',
+        'spacing'       => 'tblCellSpacing',
+        'skipBefore'    => 'gridBefore',
+        'skipAfter'     => 'gridAfter',
     );
-    
+
     protected function initMap()
     {
         parent::initMap(self::$aliases);

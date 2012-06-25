@@ -26,6 +26,8 @@ class TableCellFormatter extends Shared
         'width'         => 'tcW',
         'valign'        => 'valign',
         'border'        => 'tcBorders',
+        'colspan'       => 'gridSpan',
+        'rowspan'       => 'vMerge',
     );
 
     protected function initMap()
@@ -34,7 +36,7 @@ class TableCellFormatter extends Shared
         $this->map = array(
             'cellMerge'         => '',
             'gridSpan'          => 'decimal',
-            'hMerge'            => '',
+            //'hMerge'            => '',    // use gridSpan instead
             'noWrap'            => 'bool',
             'shd'               => '',
             'tcBorders'         => 'border',
@@ -43,8 +45,24 @@ class TableCellFormatter extends Shared
             'tcW'               => 'tblWidth',
             'textDirection'     => 'textdir',
             'vAlign'            => 'valign',
-            'vMerge'            => '',
+            'vMerge'            => 'vmerge',
         ) + $this->map;
+    }
+
+    /**
+     * Process vMerge property
+     */
+    protected function process_vmerge($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+
+        // if $val is not numeric it should be "continue"
+        if (is_numeric($val)) {
+            $prop->appendChild(new \DOMAttr('w:val', is_numeric($val) ? 'restart' : $val));
+        }
+        $root->appendChild($prop);
+        return true;
     }
 
     /**

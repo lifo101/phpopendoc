@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -37,22 +37,27 @@ class Table extends Element implements TableInterface, BlockInterface
     const CONTEXT_GRID  = 1;
     const CONTEXT_ROW   = 2;
     const CONTEXT_CELL  = 3;
-    
+
     /**
      * @var array Table grid
      */
     protected $grid;
-    
+
     /**
      * @var array Table rows
      */
     protected $rows;
-    
+
     /**
      * @var integer Index to current row
      */
     protected $rowIdx;
-    
+
+    /**
+     * @var integer Index to current cell
+     */
+    protected $cellIdx;
+
     /**
      * @var array Reference to current row
      */
@@ -62,38 +67,45 @@ class Table extends Element implements TableInterface, BlockInterface
      * @var array Reference to current cell
      */
     protected $cellRef;
-    
+
     /**
      * @var string Track last context used
      */
     private $context;
-    
+
     /**
      * @var array Parent table for nested tables.
      */
     private $parentTbl;
-    
+
     /**
      * @var array A list of default properties for rows and cells
      */
     private $defaults;
+
+    /**
+     * @var array Cell rowspan information
+     */
+    private $rowspan;
 
     public function __construct($properties = null)
     {
         parent::__construct($properties);
         $this->grid = array();
         $this->rows = array();
+        $this->rowspan = array();
         $this->defaults = array();
         $this->rowIdx = -1;
+        $this->cellIdx = -1;
         $this->context = self::CONTEXT_TABLE;
     }
-    
+
     /**
      * Create a new Table instance.
      *
      * This is a shortcut so the caller doesn't have to assign "new" to a
      * variable before they can build out the table.
-     * 
+     *
      * @param mixed $properties Table level properties
      * @return Table Returns a new Table instance.
      */
@@ -107,12 +119,12 @@ class Table extends Element implements TableInterface, BlockInterface
     {
         $this->parentTbl = $parent;
     }
-    
+
     public function getParent()
     {
         return $this->parentTbl;
     }
-    
+
     /**
      * Created a new table at the current cell context.
      *
@@ -121,7 +133,7 @@ class Table extends Element implements TableInterface, BlockInterface
      * end the nested table. When using Table::create() and you have nested
      * tables always be sure to call ::end() otherwise the last nested table
      * will be the one assigned to your variable and not the root table.
-     * 
+     *
      * @param mixed $properties Table level properties
      * @return Table Returns a new Table instance.
      */
@@ -129,10 +141,10 @@ class Table extends Element implements TableInterface, BlockInterface
     {
         $tbl = new Table($properties);
         $tbl->setParent($this);
-        $this->cell($tbl);
+        $this->cell(array($tbl, ''));
         return $tbl;
     }
-    
+
     /**
      * End the current nested table level.
      *
@@ -144,13 +156,48 @@ class Table extends Element implements TableInterface, BlockInterface
      */
     public function end($all = false)
     {
+        // complete any remaining rowspan's otherwise they won't get rendered
+        if ($this->rowspan) {
+            // determine max columns defined
+            $max = 0;
+            foreach ($this->rows as $r) {
+                $cols = 0;
+                foreach ($r->getElements() as $c) {
+                    $p = $c->getProperties();
+                    if ($p->has('colspan')) {
+                        $cols += $p->get('colspan');
+                    } else {
+                        $cols += 1;
+                    }
+                }
+                $max = max($cols, $max);
+            }
+            // repeat untilwe have no more rowspans ...
+            while ($this->rowspan) {
+                $this->cellIdx += 1;
+
+                // start a new row if we've reached the max
+                if ($this->cellIdx > $max) {
+                    $this->row();
+                }
+
+                if (isset($this->rowspan[ $this->cellIdx ])) {
+                    $this->updateRowspan();
+                } else {
+                    $this->cell('');
+                }
+
+            }
+        }
+
         if (!$all) {
-            return $this->parentTbl ?: $this;
+            return $this->parentTbl ? $this->parentTbl->end() : $this;
         }
 
         if ($this->parentTbl) {
             $parent = $this->parentTbl;
             while ($parent) {
+                $parent->end();
                 if ($parent->parentTbl) {
                     $parent = $parent->parentTbl;
                 } else {
@@ -158,13 +205,13 @@ class Table extends Element implements TableInterface, BlockInterface
                 }
             }
         }
-        
+
         return $this;
     }
 
     /**
      * {@inheritdoc}
-     */    
+     */
     public function grid($cols = null)
     {
         $this->context = self::CONTEXT_GRID;
@@ -190,15 +237,15 @@ class Table extends Element implements TableInterface, BlockInterface
         // @todo Is this really necessary? Technically speaking a gridCol can
         //       can be defined anywhere w/o affecting the current context.
         //       But for now lets keep the interface the same as other contexts.
-        if (!$this->context == self::CONTEXT_GRID) {
+        if ($this->context != self::CONTEXT_GRID) {
             $trace = debug_backtrace();
             throw new ElementException("Not in grid context. Call grid() first at {$trace[0]['file']}:{$trace[0]['line']}");
         }
-        
+
         $this->grid[] = $width;
         return $this;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -208,10 +255,13 @@ class Table extends Element implements TableInterface, BlockInterface
         $this->rowIdx += 1;
         $this->rows[ $this->rowIdx ] = new TableRow($this->_createProperties($properties, 'row'));
         $this->rowRef =& $this->rows[ $this->rowIdx ];
-        
+
+        // restart cell index
+        $this->cellIdx = -1;
+
         return $this;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -225,16 +275,52 @@ class Table extends Element implements TableInterface, BlockInterface
         }
         $this->context = self::CONTEXT_CELL;
 
-        $this->cellRef = new TableCell($this->_createProperties($properties, 'cell'));
+        $this->cellIdx += 1;
+
+        // if there is a rowspan in our column in a row above us we need to
+        // continue it before adding the new cell from the caller.
+        $this->updateRowspan();
+
+        $this->cellRef = new TableCell();
         $this->rowRef->addElement($this->cellRef);
-        
-        if ($elements !== null) {
-            $this->add($elements);
-        }
-        
+
+        $this->add($elements);
+        $this->prop($this->_createProperties($properties, 'cell'));
+
         return $this;
     }
-    
+
+    /**
+     * Helper function that updated the current rowspan (only if needed).
+     *
+     * This method does not have to be called when merging rows via rowspan's.
+     * this is merely a helper method to allow the user to keep their cell
+     * structure neat. However, if you do use this where merged cells would
+     * normally be located in your table there will be no need to call ->end()
+     * at the end of the table chain.
+     */
+    public function merged()
+    {
+        return $this->updateRowspan();
+    }
+
+    private function updateRowspan()
+    {
+        if (isset($this->rowspan[ $this->cellIdx ])) {
+            if ($this->rowspan[ $this->cellIdx ] > 1) {
+                $this->rowspan[ $this->cellIdx ] --;
+                if ($this->rowspan[ $this->cellIdx ] <= 1) {
+                    unset($this->rowspan[ $this->cellIdx ]);
+                }
+                // merged cells must have an empty block element, eg: <w:p/>
+                $this->cell('', array('rowspan' => 'continue'));
+            } else {
+                unset($this->rowspan[ $this->cellIdx ]);
+            }
+        }
+        return $this;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -246,18 +332,18 @@ class Table extends Element implements TableInterface, BlockInterface
         if (!$this->cellRef) {
             throw new ElementException("No cells are defined. Call cell() first.");
         }
-        
+
         if (!is_array($elements)) {
             $elements = array( $elements );
         }
-        
+
         foreach ($elements as $e) {
             if (($e instanceof LinkInterface) or !($e instanceof BlockInterface)) {
                 $e = new Paragraph($e, $e instanceof ElementInterface ? $e->getProperties() : null);
             }
             $this->cellRef->addElement($e);
         }
-        
+
         return $this;
     }
 
@@ -295,6 +381,45 @@ class Table extends Element implements TableInterface, BlockInterface
     }
 
     /**
+     * Shortcut for adding a "rowspan" to a cell
+     *
+     * @param integer $rows The number of rows to span the cell vertically
+     */
+    public function rowspan($rows)
+    {
+        if ($this->context != self::CONTEXT_CELL) {
+            $trace = debug_backtrace();
+            throw new ElementException("Not in cell context. Call cell() first at {$trace[0]['file']}:{$trace[0]['line']}");
+        }
+        if (!$this->cellRef) {
+            $trace = debug_backtrace();
+            throw new ElementException("No cells are defined. Call cell() first at {$trace[0]['file']}:{$trace[0]['line']}");
+        }
+
+        return $this->prop('rowspan', $rows);
+    }
+
+
+    /**
+     * Shortcut for adding a "colspan" to a cell
+     *
+     * @param integer $cols The number of columns to span the cell horizontally
+     */
+    public function colspan($cols)
+    {
+        if ($this->context != self::CONTEXT_CELL) {
+            $trace = debug_backtrace();
+            throw new ElementException("Not in cell context. Call cell() first at {$trace[0]['file']}:{$trace[0]['line']}");
+        }
+        if (!$this->cellRef) {
+            $trace = debug_backtrace();
+            throw new ElementException("No cells are defined. Call cell() first at {$trace[0]['file']}:{$trace[0]['line']}");
+        }
+
+        return $this->prop('colspan', $cols);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function prop($key, $val = null)
@@ -314,7 +439,7 @@ class Table extends Element implements TableInterface, BlockInterface
             default:
                 throw new ElementException("Unknown table context ($this->context)");
         }
-        
+
         if (($key instanceof PropertiesInterface)) {
             // overwrite current properties with new ones
             $prop->clear();
@@ -322,7 +447,20 @@ class Table extends Element implements TableInterface, BlockInterface
         } else {
             $prop->set($key, $val);
         }
-        
+
+        if ($this->context == self::CONTEXT_CELL) {
+            // if a "rowspan" is specified we handle it carefully ...
+            if ($prop->has('rowspan')
+                and is_numeric($prop['rowspan'])
+                and !isset($this->rowspan[ $this->cellIdx ])) {
+                $this->rowspan[ $this->cellIdx ] = $prop['rowspan'];
+            }
+
+            if ($prop->has('colspan')) {
+                $this->cellIdx += $prop['colspan'] - 1;
+            }
+        }
+
         return $this;
     }
 
@@ -375,7 +513,7 @@ class Table extends Element implements TableInterface, BlockInterface
     {
         return $this->rows;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -383,7 +521,7 @@ class Table extends Element implements TableInterface, BlockInterface
     {
         return $this->grid;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -391,7 +529,7 @@ class Table extends Element implements TableInterface, BlockInterface
     {
         return array();
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -403,7 +541,7 @@ class Table extends Element implements TableInterface, BlockInterface
     /**
      * @internal Creates a new Properties object
      * @throws ElementException
-     */    
+     */
     private function _createProperties($properties = array(), $defaults = null)
     {
         if (is_array($properties) or $properties === null) {
