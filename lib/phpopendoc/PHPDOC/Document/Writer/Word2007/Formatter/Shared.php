@@ -113,7 +113,7 @@ class Shared
     protected function process_align($name, $val, ElementInterface $element, \DOMNode $root)
     {
         static $valid = array(
-            'both', 'justify', 'right', 'center', 'distribute',
+            'both', 'justify', 'left', 'right', 'center', 'distribute',
             'highKashida', 'lowKashida', 'mediumKashida', 'thaiDistribute'
         );
 
