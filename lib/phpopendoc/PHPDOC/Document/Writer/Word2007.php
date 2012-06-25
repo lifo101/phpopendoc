@@ -374,8 +374,8 @@ class Word2007 implements WriterInterface
         $rect = $dom->createElement('v:shape');
         $rect->appendChild(new \DOMAttr('type', '#_x0000_t75'));
         $rect->appendChild(new \DOMAttr('style', sprintf('width:%dpx;height:%dpx',
-            $element->getWidth(),
-            $element->getHeight()
+            $element->getWidth(true),
+            $element->getHeight(true)
         )));
 
         $fill = $dom->createElement('v:imagedata');
