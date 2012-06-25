@@ -127,6 +127,34 @@ class Shared
         return $this->appendSimpleValue($root, $name, $val);
     }
 
+    protected function process_tblWidth($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        $type = 'dxa';                          // default to twips
+        $w = floatval($val);
+        if ($val === null or $val == 'null' or $val == 'nil') {
+            $type = 'nil';
+            $w = 0;
+        } elseif (substr($val, -1) == '%') {
+            $type = 'pct';
+            $w = $w * 50;                       // Fiftieth of a percent
+        } elseif (substr($val, -2) == 'pt') {
+            $w = Translator::pointToTwip($w);
+        } elseif (substr($val, -2) == 'px') {
+            $w = Translator::pixelToTwip($w);
+        } elseif (substr($val, -2) == 'in') {
+            $w = Translator::inchToTwip($w);
+        }
+
+        $dom = $root->ownerDocument;
+
+        $prop = $dom->createElement('w:' . $name);
+        $prop->appendChild(new \DOMAttr('w:type', $type));
+        $prop->appendChild(new \DOMAttr('w:w', $w));
+
+        $root->appendChild($prop);
+        return true;
+    }
+
     /**
      * Lookup a property name and return the translation type for it
      *
