@@ -28,7 +28,7 @@ class TableRow extends Element implements BlockInterface
                 $this->elements[] = $element;
             } else {
                 // Any other element is automatically wrapped
-                $this->elements[] = new Paragraph($element);
+                $this->elements[] = new Paragraph($element, $element->getProperties());
             }
         } elseif (is_string($element)) {
             // Plain strings are converted to Paragraph

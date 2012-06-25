@@ -253,7 +253,7 @@ class Table extends Element implements TableInterface, BlockInterface
         
         foreach ($elements as $e) {
             if (($e instanceof LinkInterface) or !($e instanceof BlockInterface)) {
-                $e = new Paragraph($e);
+                $e = new Paragraph($e, $e->getProperties());
             }
             $this->cellRef->addElement($e);
         }

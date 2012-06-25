@@ -195,7 +195,7 @@ class Section implements SectionInterface
             if (is_string($element)
                 or ($element instanceof LinkInterface)  // Link extends Paragraph but is not truly a block
                 or !($element instanceof BlockInterface)) {
-                $element = new Paragraph($element);
+                $element = new Paragraph($element, $element->getProperties());
             } elseif (!($element instanceof ElementInterface)) {
                 $type = gettype($element);
                 if ($type == 'object') {
