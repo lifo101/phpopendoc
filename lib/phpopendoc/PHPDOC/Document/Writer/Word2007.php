@@ -13,6 +13,7 @@ use PHPDOC\Document,
     PHPDOC\Document\WriterInterface,
     PHPDOC\Document\Writer\Exception\SaveException,
     PHPDOC\Document\Writer\Word2007\Formatter,
+    PHPDOC\Element\ElementException,
     PHPDOC\Element\ElementInterface,
     PHPDOC\Element\Paragraph
     ;
@@ -359,7 +360,22 @@ class Word2007 implements WriterInterface
             $target = ltrim($target, '/');
 
             if ($element->isFile()) {
-                $this->addFile($src, $target);
+                // remote files must be saved locally before we can add it to
+                // the ZIP archive.
+                if ($element->isRemoteFile()) {
+                    $tmp = tempnam($this->properties->get('tmp_path', sys_get_temp_dir()),
+                                   $this->properties->get('tmp_prefix', 'phpopendoc_img_'));
+                    try {
+                        $element->save($tmp);
+                    } catch (ElementException $e) {
+                        throw new SaveException($e->getMessage());
+                    }
+                    $this->addFile($tmp, $target);
+                    // can't unlink the file until after the ZIP is closed
+                    register_shutdown_function(function(){ @unlink($tmp); });
+                } else {
+                    $this->addFile($src, $target);
+                }
             } else {
                 $this->addFileFromString($element->getData(), $target);
             }
