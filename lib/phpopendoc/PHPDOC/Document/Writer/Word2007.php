@@ -13,7 +13,8 @@ use PHPDOC\Document,
     PHPDOC\Document\WriterInterface,
     PHPDOC\Document\Writer\Exception\SaveException,
     PHPDOC\Document\Writer\Word2007\Formatter,
-    PHPDOC\Element\ElementInterface
+    PHPDOC\Element\ElementInterface,
+    PHPDOC\Element\Paragraph
     ;
 
 /**
@@ -90,8 +91,14 @@ class Word2007 implements WriterInterface
 
         // create the main document "Story"
         $this->createDocument($document, $body, 'word/document.xml');
+        //echo $dom->saveXML();
 
-        echo $dom->saveXML();
+        $this->processPackageRelationships();
+        $this->processDocumentCoreProperties();
+        $this->processDocumentSettings();
+        $this->processDocumentRelationships();
+        $this->processContentTypes();
+
         $this->saveArchive($output);
     }
 
@@ -100,37 +107,38 @@ class Word2007 implements WriterInterface
      *
      * Processes the elements in the Document given and creates a WordML DOM.
      * All relationships, content-types and media files will be added to the
-     * archive, as needed. The resulting file is NOT actually added to the ZIP
-     * archive. The target is merely used for relationship mapping.
+     * physical archive, as needed.
      *
-     * @param Document     $document Document to process.
-     * @param \DOMDocument $root     DOM object representing WordML document (usually the <body>)
-     * @param string       $target   Filename that will be used in the archive
+     * @param Document $document Document to process.
+     * @param \DOMNode $root     DOM node representing WordML document (usually the <body>)
+     * @param string   $target   Filename that will be used in the archive
      */
-    protected function createDocument($document, $root, $target)
+    protected function createDocument($document, \DOMNode $root, $target)
     {
+        $dom = $root->ownerDocument;
         $total = count($document);
         $idx = 0;
         foreach ($document as $section) {
             $idx += 1;
 
-            // process section body content ...
+            // The section can not be blank
+            // @todo This creates a side-effect as it causes a blank paragraph
+            //       to be added to the section object.
+            if (!$section->hasElements()) {
+                $section[] = new Paragraph();
+            }
+
+            // process section body content
             foreach ($section as $element) {
                 $this->traverseElement($element, $root, 'processElement');
             }
 
-            $dom = $root->ownerDocument;
-
-            // The body can not be blank ...
-            if (!$root->hasChildNodes()) {
-                $root->appendChild( $dom->createElement('w:p') );
-            }
-
-            // Add the section properties <w:sectPr>. It either goes INTO or
-            // AFTER the last paragraph depending if we're on the last section.
+            // create section properties
             $sect = $dom->createElement('w:sectPr');
             $this->formatter->format($section, $sect);
 
+            // Add the section properties. It either goes INTO or AFTER the last
+            // paragraph depending if we're on the last section.
             if ($idx == $total) {               // last section of document
                 $root->appendChild($sect);
 
@@ -160,12 +168,18 @@ class Word2007 implements WriterInterface
             }
         }
 
+        $this->addFileFromString($dom->saveXML(), $target);
     }
 
     /**
-     * Process the element
+     * Factory method that processes any element and passes it along to the
+     * appropriate method that will actually handle the processing.
+     *
+     * @param ElementInterface $element Element to process
+     * @param \DOMNode         $root    The root node to update
+     * @return \DOMNode Returns the new or original root node
      */
-    private function processElement($element, $root)
+    private function processElement(ElementInterface $element, \DOMNode $root)
     {
         $interface = $element->getInterface();
         $method = str_replace('Interface', 'Element', $interface);
@@ -184,11 +198,9 @@ class Word2007 implements WriterInterface
     }
 
     /**
-     * Process a Paragraph.
-     *
-     * A paragraph <w:p> can contain run level content
+     * Process a Paragraph
      */
-    private function processParagraphElement($element, $root)
+    private function processParagraphElement(ElementInterface $element, \DOMNode $root)
     {
         $dom = $root->ownerDocument;
         $node = $dom->createElement('w:p');
@@ -204,11 +216,9 @@ class Word2007 implements WriterInterface
     }
 
     /**
-     * Process a Table.
-     *
-     * A table <w:tbl> can contain rows of block level content.
+     * Process a Table
      */
-    private function processTableElement($element, $root)
+    private function processTableElement(ElementInterface $element, \DOMNode $root)
     {
         $dom = $root->ownerDocument;
         $node = $dom->createElement('w:tbl');
@@ -274,7 +284,7 @@ class Word2007 implements WriterInterface
      *
      * A hyperlink <w:hyperlink> can contain run level content
      */
-    private function processLinkElement($element, $root)
+    private function processLinkElement(ElementInterface $element, \DOMNode $root)
     {
         $dom = $root->ownerDocument;
         $node = $dom->createElement('w:hyperlink');
@@ -283,10 +293,10 @@ class Word2007 implements WriterInterface
         $rid = $this->getRelationId('hyperlink', $element->getTarget());
         if (!$rid) {
             $rid = $this->getNextRelationId();
-            $this->addRelation($rid, 'hyperlink', $element->getTarget(), $element->getTarget());
+            $this->addRelation($rid, 'hyperlink', $element->getTarget(), $element->getTarget(), 'External');
         }
 
-        $node->appendChild(new \DOMAttr('w:id', $rid));
+        $node->appendChild(new \DOMAttr('r:id', $rid));
 
         return $node;
     }
@@ -296,7 +306,7 @@ class Word2007 implements WriterInterface
      *
      * A TextRun <w:r> can contain text elements.
      */
-    private function processTextRunElement($element, $root)
+    private function processTextRunElement(ElementInterface $element, \DOMNode $root)
     {
         $dom = $root->ownerDocument;
         $node = $dom->createElement('w:r');
@@ -312,80 +322,82 @@ class Word2007 implements WriterInterface
     }
 
     /**
-     * Process a Text.
-     *
-     * A Text <w:t> can contain text elements.
+     * Process a Text element
      */
-    private function processTextElement($element, $root)
+    private function processTextElement(ElementInterface $element, \DOMNode $root)
     {
         $dom = $root->ownerDocument;
         $node = $dom->createElement('w:t', $element->getContent());
         $root->appendChild($node);
+        return $root;
     }
 
     /**
      * Processes a single media element. Updates the archive with its
      * content-type, relationship and media (image) file.
-     *
-     * @param ElementInterface $element The element to process.
      */
-    private function processImageElement($element, $root)
+    private function processImageElement(ElementInterface $element, \DOMNode $root)
     {
+        static $imgId = 0;
 
-        // @todo
-        $rid = 'rId1';
+        $src = $element->getSource();
+        if (!$element->isFile()) {
+            // sha1 the raw data:uri
+            $src = sha1($src);
+        }
+
+        $rid = $this->getRelationId('image', $src);
+        if (!$rid) {
+            $imgId += 1;
+            $rid = $this->getNextRelationId();
+            $target = sprintf('%s/image%d.%s',
+                              $this->properties->get('media_path', 'word/media'),
+                              $imgId,
+                              $element->getExtension()
+            );
+
+            if ($element->isFile()) {
+                $this->addFile($src, $target);
+            } else {
+                $this->addFileFromString($element->getData(), $target);
+            }
+            $this->addContentType($element->getExtension(), $element->getContentType());
+            $this->addRelation($rid, 'image', '/' . $target, $src);
+        }
 
         $dom = $root->ownerDocument;
 
         // @todo Change this to use DrawingML instead of VML
         $node = $dom->createElement('w:pict');
-        $rect = $dom->createElement('v:rect');
-        $rect->appendChild(new \DOMAttr('stroked', 'f'));
-        $rect->appendChild(new \DOMAttr('style', sprintf('width:%spx;height:%spx',
-                                                          $element->getWidth(),
-                                                          $element->getHeight()
+        $rect = $dom->createElement('v:shape');
+        $rect->appendChild(new \DOMAttr('type', '#_x0000_t75'));
+        $rect->appendChild(new \DOMAttr('style', sprintf('width:%dpx;height:%dpx',
+            $element->getWidth(),
+            $element->getHeight()
         )));
 
-        $fill = $dom->createElement('v:fill');
+        $fill = $dom->createElement('v:imagedata');
         $fill->appendChild(new \DOMAttr('r:id', $rid));
-        $fill->appendChild(new \DOMAttr('type', 'frame'));
+        $fill->appendChild(new \DOMAttr('o:title', ''));
 
         $root->appendChild($node);
         $node->appendChild($rect);
         $rect->appendChild($fill);
 
-        //$src = $element->getSource();
-        //if (!$this->getRelationId('image', $src)) {
-        //    $id += 1;
-        //    $rid = $this->getNextRelationId();
-        //    $target = sprintf('word/media/image%d.%s', $id, $element->getExtension());
-        //    if (substr($src, 0, 5) == 'data:') {
-        //        // The source is actually a data uri: data:image/png;base64,...
-        //        // @todo this blindly assumes the data is base64 encoded
-        //        $data = base64_decode(substr($src, strpos($src, ',')+1));
-        //        $this->addFileFromString($data, $target);
-        //    } else {
-        //        $this->addFile($src, $target);
-        //    }
-        //    $this->addContentType($element->getExtension(), $element->getContentType());
-        //    $this->addRelation($rid, 'image', $target, $src);
-        //}
+        return $root;
     }
 
     /**
      * Traverse a document element and all of its children
      *
+     * This is the main method used to travese the document elements to create
+     * the XML tree required for saving the WordML.
+     *
      * @param mixed  $element The element to traverse
      * @param string $method  Optional method name to call before traversing any children
      */
-    private function traverseElement($element, $root, $method)
+    private function traverseElement(ElementInterface $element, \DOMNode $root, $method)
     {
-        //if ($method !== null) {
-        //    if (!method_exists($this, $method)) {
-        //        throw new SaveException("Undefined method specified \"$method\"");
-        //    }
-        //    $this->$method($element, $root);
-        //}
         $newRoot = $this->$method($element, $root);
         if ($newRoot !== null) {
             $root = $newRoot;
@@ -397,9 +409,8 @@ class Word2007 implements WriterInterface
         }
     }
 
-    protected function setDocumentNamespaces($root, $namespaces = null)
+    protected function setDocumentNamespaces(\DOMNode $root, $namespaces = null)
     {
-        // @todo This should probably be a class property so it can be overridden
         static $default = array(
             'xmlns:ve'  => 'http://schemas.openxmlformats.org/markup-compatibility/2006',
             'xmlns:o'   => 'urn:schemas-microsoft-com:office:office',
@@ -431,7 +442,7 @@ class Word2007 implements WriterInterface
     protected function initArchive()
     {
         $this->zipFile = tempnam($this->properties->get('tmp_path', sys_get_temp_dir()),
-                                 $this->properties->get('tmp_prefix', ''));
+                                 $this->properties->get('tmp_prefix', 'phpopendoc_'));
         $this->zip = new \ZipArchive();
 
         if ($this->zip->open($this->zipFile, \ZipArchive::OVERWRITE) !== true) {
@@ -456,75 +467,11 @@ class Word2007 implements WriterInterface
                 if (!@copy($this->zipFile, $output)) {
                     $err = error_get_last();
                     throw new SaveException("Error saving document to \"$output\". Reason: " . $err['message']);
-                } else {
-                    @unlink($this->zipFile);
                 }
             }
+            @unlink($this->zipFile);
         }
     }
-
-    /**
-     * Saves the DOM as a Word "docx" file.
-     *
-     * @param string   $output   Output filename or other stream.
-     */
-    //protected function saveDom($output = null)
-    //{
-    //    if ($output === null) {
-    //        $output = 'php://output';
-    //    }
-    //
-    //    $this->processSections();
-    //    $this->processPackageRelationships();
-    //    $this->processDocumentRelationships();
-    //    $this->processContentTypes();
-    //    $this->processMainDocument();
-    //
-    //    return $this;
-    //}
-
-    /**
-     * Process all sections within the document and process any elements.
-     */
-    //protected function processSections()
-    //{
-    //    // Loop through all elements within each section looking for elements
-    //    // that require relationships, content-types, media files, etc...
-    //    foreach ($this->document->getSections() as $section) {
-    //        $this->traverseElement($section, 'processElement');
-    //
-    //        if ($section->hasHeaders()) {
-    //            foreach ($section->getHeaders() as $element) {
-    //                $this->traverseElement($element, 'processElement');
-    //            }
-    //        }
-    //
-    //        if ($section->hasFooters()) {
-    //            foreach ($section->getFooters() as $element) {
-    //                $this->traverseElement($element, 'processElement');
-    //            }
-    //        }
-    //    }
-    //}
-
-    /**
-     * Processes a single link element. Updates the archive with its
-     * relationship.
-     *
-     * This is a callback for traverseElement() and should not be called directly.
-     * Non-link type elements are ignored.
-     *
-     * @param ElementInterface $element The element to process.
-     */
-    //private function processLinkElement($element)
-    //{
-    //    if ($element instanceof LinkInterface) {
-    //        if (!$this->getRelationId('hyperlink', $element->getTarget())) {
-    //            $rid = $this->getNextRelationId();
-    //            $this->addRelation($rid, 'hyperlink', $element->getTarget(), $element->getTarget());
-    //        }
-    //    }
-    //}
 
     /**
      * Process all package relationships and add them to the archive
@@ -539,6 +486,31 @@ class Word2007 implements WriterInterface
         $xml[] = '</Relationships>';
 
         $this->addFileFromString(implode("\n", $xml), '_rels/.rels');
+    }
+
+    private function processDocumentCoreProperties()
+    {
+        $xml = array();
+        $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $xml[] = '<coreProperties'
+            . 'xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"'
+            . 'xmlns:dcterms="http://purl.org/dc/terms/"'
+            . 'xmlns:dc="http://purl.org/dc/elements/1.1/"'
+            . 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">';
+
+        $xml[] = '</coreProperties>';
+
+        $this->addFileFromString(implode("\n", $xml), 'docProps/core.xml');
+    }
+
+    private function processDocumentSettings()
+    {
+        //// @todo Move static directory somewhere else more appropriate
+        //$source = $this->properties->get('static_path', __DIR__ . '/../../../../../static') . '/settings.xml';
+        //
+        //$this->addContentType('/word/settings.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml', true);
+        //$this->addRelation($this->getNextRelationId(), 'settings', 'settings.xml');
+        //$this->addFile($source, 'word/settings.xml');
     }
 
     /**
@@ -587,67 +559,14 @@ class Word2007 implements WriterInterface
         }
 
         $xml[] = '</Types>';
-        //print implode("\n", $xml);
 
         $this->addFileFromString(implode("\n", $xml), '[Content_Types].xml');
     }
 
     /**
-     * Process the main document and add it to the archive
-     */
-    private function processMainDocument()
-    {
-        // @todo temporary ...
-        $namespaces = array(
-            'xmlns:ve'  => 'http://schemas.openxmlformats.org/markup-compatibility/2006',
-            'xmlns:o'   => 'urn:schemas-microsoft-com:office:office',
-            'xmlns:r'   => 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-            'xmlns:m'   => 'http://schemas.openxmlformats.org/officeDocument/2006/math',
-            'xmlns:v'   => 'urn:schemas-microsoft-com:vml',
-            'xmlns:wp'  => 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing',
-            'xmlns:w10' => 'urn:schemas-microsoft-com:office:word',
-            'xmlns:w'   => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
-            'xmlns:wne' => 'http://schemas.microsoft.com/office/word/2006/wordml',
-        );
-
-        if (!$this->wordDom) {
-            $this->setDom();
-        }
-
-        $w = $this->wordDom;    // alias
-        $root = $w->createElement('w:document');
-        foreach ($namespaces as $ns => $uri) {
-            $root->appendChild(new \DOMAttr($ns, $uri));
-        }
-        $w->appendChild($root);
-
-        $body = $w->createElement('w:body', '');
-        $root->appendChild($body);
-
-        $p = $w->createElement('w:p');
-        $r = $w->createElement('w:r');
-        $t = $w->createElement('w:t', 'Hello World');
-        $r->appendChild($t);
-        $p->appendChild($r);
-        $body->appendChild($p);
-
-        $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?' . '>';
-        $xml[] = '<w:document xmlns:ve="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml">';
-        $xml[] =    '<w:body>';
-        $xml[] =        '<w:p>';
-        $xml[] =            '<w:r>';
-        $xml[] =                '<w:t>Hello World! ' . date('Y-m-d H:i:s') . '</w:t>';
-        $xml[] =            '</w:r>';
-        $xml[] =        '</w:p>';
-        $xml[] =    '</w:body>';
-        $xml[] = '</w:document>';
-
-        $this->addFileFromString(implode("\n", $xml), 'word/document.xml');
-
-    }
-
-    /**
-     * Add a new relationship
+     * Add a new relationship.
+     *
+     * Note: Document relationships are relative to the _rels path.
      *
      * $param string $rid    The Relationship ID
      * @param string $type   The type of relationship (eg: 'image', 'hyperlink', ...)
@@ -708,28 +627,11 @@ class Word2007 implements WriterInterface
         return $this
             ->addContentType('xml', 'application/xml')
             ->addContentType('rels', 'application/vnd.openxmlformats-package.relationships+xml')
-            ->addContentType('/docProps/app.xml', 'application/vnd.openxmlformats-officedocument.extended-properties+xml', true)
-            ->addContentType('/docProps/core.xml', 'application/vnd.openxmlformats-package.core-properties+xml', true)
             ->addContentType('/word/document.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml', true)
+            ->addContentType('/wordProps/core.xml', 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties', true)
+            ->addContentType('/wordProps/app.xml', 'application/vnd.openxmlformats-officedocument.extended-properties+xml', true)
             ;
     }
-
-    // not used
-    //private function traverseDOM(\DOMNode $node, $method)
-    //{
-    //    if ($method !== null) {
-    //        //call_user_func(array($this, $method), $node);
-    //        $this->$method($node);
-    //    }
-    //    if ($node->hasChildNodes()) {
-    //        foreach ($node->childNodes as $child) {
-    //            if ($child->nodeType == XML_ELEMENT_NODE) {
-    //                $this->traverseDOM($child, $method);
-    //            }
-    //        }
-    //    }
-    //}
-
 
     /**
      * Return the next available Relationship ("rId")
@@ -771,14 +673,15 @@ class Word2007 implements WriterInterface
     }
 
     /**
-     * Set a new DOMDocument object that will be used to generate the main
-     * WordML document.
+     * Set a new DOMDocument object that will be used to generate a WordML
+     * document.
      *
      * Creates a new DOMDocument object. The caller can pass in a new object
      * of their own creation, or pass nothing and a default object will be
      * created instead.
      *
      * @param \DOMDocument $dom Optional new DOMDocument object
+     * @return \DOMDocument New DOM document object or the same object passed in
      */
     public function setDom(\DOMDocument $dom = null)
     {
