@@ -8,7 +8,8 @@
  */
 namespace PHPDOC\Document\Writer\Word2007\Formatter;
 
-use PHPDOC\Element\ElementInterface;
+use PHPDOC\Element\ElementInterface,
+    PHPDOC\Document\Writer\Exception\SaveException;
 
 /**
  * Shared property formats
@@ -109,10 +110,27 @@ class Shared
         return $this->appendSimpleValue($root, $name, $val);
     }
 
+    protected function process_align($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $valid = array(
+            'both', 'justify', 'right', 'center', 'distribute',
+            'highKashida', 'lowKashida', 'mediumKashida', 'thaiDistribute'
+        );
+
+        if ($val == 'justify') {
+            $val = 'both';
+        }
+        if (!in_array($val, $valid)) {
+            throw new SaveException("Invalid justify value \"$val\". Must be one of: " . implode(',',$valid));
+        }
+
+        return $this->appendSimpleValue($root, $name, $val);
+    }
+
     /**
      * Lookup a property name and return the translation type for it
      *
-     * @return string The translation type
+     * @return string The translation type or null if not defined in map
      * @param string $name The property name/alias to lookup
      */
     public function lookup($name)
@@ -121,7 +139,7 @@ class Shared
         if (isset($this->map[$name])) {
             return $this->map[$name];
         }
-        return $name;
+        return null;
     }
 
     /**

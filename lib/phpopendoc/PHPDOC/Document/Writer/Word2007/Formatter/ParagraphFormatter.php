@@ -69,32 +69,6 @@ class ParagraphFormatter extends Shared
     }
 
     /**
-     * Process alignment property
-     *
-     * @param string           $name    The original property name.
-     * @param mixed            $val     The property value or array.
-     * @param ElementInterface $element The element being processed.
-     * @param \DOMNode         $root    The DOM node to update.
-     * @return boolean Return true if the property was processed
-     */
-    protected function process_align($name, $val, ElementInterface $element, \DOMNode $root)
-    {
-        static $valid = array(
-            'both', 'justify', 'right', 'center', 'distribute',
-            'highKashida', 'lowKashida', 'mediumKashida', 'thaiDistribute'
-        );
-
-        if ($val == 'justify') {
-            $val = 'both';
-        }
-        if (!in_array($val, $valid)) {
-            throw new SaveException("Invalid justify value \"$val\". Must be one of: " . implode(',',$valid));
-        }
-
-        return $this->appendSimpleValue($root, $name, $val);
-    }
-
-    /**
      * Process border property
      */
     protected function process_border($name, $val, ElementInterface $element, \DOMNode $root)
