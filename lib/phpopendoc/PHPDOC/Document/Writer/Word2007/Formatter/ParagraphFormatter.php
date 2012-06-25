@@ -69,6 +69,42 @@ class ParagraphFormatter extends Shared
     }
 
     /**
+     * Process spacing
+     */
+    protected function process_spacing($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $attrs = array('after', 'afterAutospacing', 'afterLines',
+                              'before', 'beforeAutospacing', 'beforeLines',
+                              'line', 'lineRule');
+
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+
+        // if $val is a string then assume its a simple spacing value for
+        // 'before' and 'after'.
+        if (!is_array($val)) {
+            $v = Translator::pointToTwip($val);
+            $val = array(
+                'after' => $v,
+                'before' => $v,
+                'line' => 240,  // 240ths of a line == 1 line
+                'lineRule' => 'auto',
+            );
+        }
+
+        foreach ($val as $k => $v) {
+            if (!in_array($k, $attrs)) {
+                continue;
+            }
+
+            $prop->appendChild(new \DOMAttr('w:' . $k, $v));
+        }
+
+        $root->appendChild($prop);
+        return true;
+    }
+
+    /**
      * Process border property
      */
     protected function process_border($name, $val, ElementInterface $element, \DOMNode $root)
