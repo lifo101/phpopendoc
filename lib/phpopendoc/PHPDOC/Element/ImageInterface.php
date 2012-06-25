@@ -22,6 +22,7 @@ interface ImageInterface
     /**
      * Save the image source to the specified destination filename.
      *
+     * @throws ElementException When there is an error saving the file.
      * @param string $dest Destination filename.
      */
     public function save($dest);
@@ -53,6 +54,15 @@ interface ImageInterface
      * @return boolean Returns true if the image source points to a file.
      */
     public function isFile();
+
+    /**
+     * Return true if the file is remote.
+     *
+     * A remote file is any filename that has a protocol like 'http', 'https'.
+     *
+     * @return boolean Returns true if the image source points to a remote file.
+     */
+    public function isRemoteFile();
 
     /**
      * Return the width of the image

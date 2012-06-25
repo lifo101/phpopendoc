@@ -52,8 +52,10 @@ class Image extends Element implements ImageInterface
      */
     public function save($dest)
     {
-        $src = $this->getSource();
-        // @todo Implement save feature ...
+        if (!@copy($this->getSource(), $dest)) {
+            $err = error_get_last();
+            throw new ElementException("Error saving image to file \"$dest\": " . $err['message']);
+        }
     }
 
     /**
@@ -168,6 +170,20 @@ class Image extends Element implements ImageInterface
     public function isFile()
     {
         return substr($this->source, 0, 5) != 'data:';
+    }
+
+    public function isRemoteFile()
+    {
+        $pos = strpos($this->source, '://');
+        // if there is no protocol then its a normal local file path
+        if ($pos === false) {
+            return false;
+        }
+
+        $proto = substr($this->source, 0, $pos);
+        // A lot more protocol wrappers could be considered 'local' but its
+        // safer to assume everything else is remote.
+        return $proto != 'file';
     }
 
     /**
