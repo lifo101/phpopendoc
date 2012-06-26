@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -32,13 +32,17 @@ use PHPDOC\Property\Properties;
 class Link extends Paragraph implements LinkInterface
 {
     protected $target;
-    
+
     public function __construct($target, $elements = null, $properties = null)
     {
+        // default link text to the target if nothing is given
+        if ($elements == null) {
+            $elements = $target;
+        }
         parent::__construct($elements, $properties);
         $this->target = $target;
     }
-    
+
     public function getInterface()
     {
         return __NAMESPACE__ . '\\LinkInterface';
@@ -48,7 +52,7 @@ class Link extends Paragraph implements LinkInterface
     {
         return $this->target;
     }
-    
+
     public function setTarget($target)
     {
         $this->target = $target;
