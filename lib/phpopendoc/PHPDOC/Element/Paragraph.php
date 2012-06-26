@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -28,7 +28,7 @@ use PHPDOC\Property\Properties;
  */
 class Paragraph extends Element implements ParagraphInterface, BlockInterface
 {
-    
+
     public function __construct($elements = null, $properties = null)
     {
         parent::__construct($properties);
@@ -41,11 +41,13 @@ class Paragraph extends Element implements ParagraphInterface, BlockInterface
             }
         }
     }
-    
+
     public function addElement($element)
     {
         if ($element instanceof ElementInterface) {
             if (($element instanceof TextRunInterface) or
+                ($element instanceof BookmarkInterface) or
+                ($element instanceof BookmarkMarkInterface) or
                 ($element instanceof LinkInterface)) {
                 $this->elements[] = $element;
             } else {

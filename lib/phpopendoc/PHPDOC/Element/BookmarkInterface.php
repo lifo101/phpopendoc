@@ -20,14 +20,6 @@ namespace PHPDOC\Element;
 interface BookmarkInterface
 {
     /**
-     * Create a new bookmark.
-     *
-     * @param string $name     Unique bookmark name
-     * @param mixed  $elements An element or a list of elements
-     */
-    public static function create($name, $elements);
-
-    /**
      * Start a new bookmark.
      *
      * @param string $name     Unique bookmark name
@@ -41,4 +33,12 @@ interface BookmarkInterface
      *                      last bookmark created will be ended.
      */
     public static function end($name = null);
+
+    /**
+     * Clear bookmark cache.
+     *
+     * This is needed if you need to create bookmarks in different documents
+     * within the same run of the script.
+     */
+    public static function clear();
 }

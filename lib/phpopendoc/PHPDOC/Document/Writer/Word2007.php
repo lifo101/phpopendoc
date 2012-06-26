@@ -281,6 +281,26 @@ class Word2007 implements WriterInterface
     }
 
     /**
+     * Process a bookmark mark
+     *
+     * A bookmark <w:bookMarkStart> and <w:bookMarkEnd> does not contain any
+     * children.
+     */
+    private function processBookmarkMarkElement(ElementInterface $element, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+
+        $node = $dom->createElement('w:bookmark' . ucfirst($element->getMark()));
+        $node->appendChild(new \DOMAttr('w:id', $element->getId()));
+        if ($element->getMark() == 'start') {
+            $node->appendChild(new \DOMAttr('w:name', $element->getName()));
+        }
+
+        $root->appendChild($node);
+        //return $root;
+    }
+
+    /**
      * Process a Link
      *
      * A hyperlink <w:hyperlink> can contain run level content
@@ -329,6 +349,11 @@ class Word2007 implements WriterInterface
     {
         $dom = $root->ownerDocument;
         $node = $dom->createElement('w:t', $element->getContent());
+        // if any whitespace is seen at the begin/end then preserve it
+        if (substr($element->getContent(), 0, 1) == ' ' or
+            substr($element->getContent(), -1) == ' ') {
+            $node->appendChild(new \DOMAttr('xml:space', 'preserve'));
+        }
         $root->appendChild($node);
         return $root;
     }
