@@ -722,21 +722,23 @@ class Word2007 implements WriterInterface
      * of their own creation, or pass nothing and a default object will be
      * created instead.
      *
-     * @param \DOMDocument $dom Optional new DOMDocument object
-     * @return \DOMDocument New DOM document object or the same object passed in
+     * @param \DOMDocument  $dom       Optional new DOMDocument object.
+     * @param boolean       $isWordDom If true the new $dom object will be set
+     *                                 as the main wordDom in the object.
+     * @return \DOMDocument            New DOM document object or the same
+     *                                 object passed in.
      */
-    public function setDom(\DOMDocument $dom = null)
+    public function setDom(\DOMDocument $dom = null, $isWordDom = false)
     {
         if ($dom === null) {
             $dom = new \DOMDocument('1.0', 'utf-8');
             $dom->xmlStandalone = true;
             $dom->formatOutput = true;
         }
-        // setDom may be called multiple times to process different parts of
-        // the document (once for the main doc, headers and footers) so we
-        // clone the object to get a unique instance.
-        $this->wordDom = clone $dom;
-        return $this->wordDom;
+        if (!isset($this->wordDom) or $force) {
+            $this->wordDom = $dom;
+        }
+        return $dom;
     }
 
     /**
