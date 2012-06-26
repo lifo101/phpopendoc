@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -29,7 +29,7 @@ class Section implements SectionInterface
     protected $headers;
     protected $footers;
     protected $properties;
-    
+
     public function __construct($name = null, $properties = null)
     {
         $this->name = $name === null ? self::guid() : $name;
@@ -42,7 +42,7 @@ class Section implements SectionInterface
             $this->properties = new Properties();
         }
     }
-    
+
     public function getInterface()
     {
         return get_class($this) . 'Interface';
@@ -55,7 +55,7 @@ class Section implements SectionInterface
     {
         return $this->name;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -64,7 +64,7 @@ class Section implements SectionInterface
         $this->name = $name;
         return $this;
     }
-    
+
     /**
      * generate a "random" GUID
      * @codeCoverageIgnore
@@ -84,7 +84,7 @@ class Section implements SectionInterface
     {
         return $this->set($element);
     }
-    
+
     public function addHeader($type = null, HeaderFooterInterface $head = null)
     {
         if ($type === null or $type == 'both') {
@@ -139,7 +139,7 @@ class Section implements SectionInterface
         $this->footers['footer-' . $type] = $foot;
         return $foot;
     }
-    
+
     /**
      * Get an element by offset.
      *
@@ -154,7 +154,7 @@ class Section implements SectionInterface
      * Returns true if the element offset exists.
      *
      * @param mixed $ofs Offset index or string name.
-     */    
+     */
     public function has($ofs)
     {
         return array_key_exists($ofs, $this->elements);
@@ -162,15 +162,15 @@ class Section implements SectionInterface
 
     /**
      * Remove an element by offset index or string name.
-     * 
+     *
      * @param mixed $ofs Offset index or string name.
-     */    
+     */
     public function remove($ofs)
     {
         unset($this->elements[$ofs]);
         return $this;
     }
-    
+
     /**
      * Add an element to the section.
      *
@@ -195,7 +195,7 @@ class Section implements SectionInterface
             if (is_string($element)
                 or ($element instanceof LinkInterface)  // Link extends Paragraph but is not truly a block
                 or !($element instanceof BlockInterface)) {
-                $element = new Paragraph($element, $element->getProperties());
+                $element = new Paragraph($element, $element instanceof ElementInterface ? $element->getProperties() : array());
             } elseif (!($element instanceof ElementInterface)) {
                 $type = gettype($element);
                 if ($type == 'object') {
@@ -203,11 +203,11 @@ class Section implements SectionInterface
                 }
                 throw new \UnexpectedValueException("Assignment value not an instance of \"ElementInterface\". Got \"$type\" instead.");
             }
-    
+
             $return[] = $element;
             if ($ofs !== null) {
                 $this->elements[$ofs] = $element;
-                unset($ofs);    // don't use it a second time ... 
+                unset($ofs);    // don't use it a second time ...
             } else {
                 $this->elements[] = $element;
             }
@@ -235,7 +235,7 @@ class Section implements SectionInterface
     {
         return $this->properties;
     }
-    
+
     public function hasProperties()
     {
         return count($this->properties) > 0;
@@ -245,7 +245,7 @@ class Section implements SectionInterface
     {
         return $this->elements;
     }
-    
+
     public function hasElements()
     {
         return $this->elements and count($this->elements) > 0;
@@ -253,14 +253,14 @@ class Section implements SectionInterface
 
     /**
      * Return an iterator for the elements in the section
-     * 
+     *
      * @internal Implements \IteratorAggregate
      */
     public function getIterator()
     {
         return new \ArrayIterator($this->elements);
     }
-    
+
     /**
      * Returns the total elements currently defined.
      *
@@ -283,7 +283,7 @@ class Section implements SectionInterface
     {
         $this->set($value, $ofs);
     }
-    
+
     /**
      * Determine if element exists
      *
@@ -294,7 +294,7 @@ class Section implements SectionInterface
     {
         return $this->has($ofs);
     }
-    
+
     /**
      * Remove element
      *
@@ -305,7 +305,7 @@ class Section implements SectionInterface
     {
         $this->remove($ofs);
     }
-    
+
     /**
      * Get element
      *
