@@ -92,7 +92,6 @@ class Word2007 implements WriterInterface
 
         // create the main document "Story"
         $this->createDocument($document, $body, 'word/document.xml');
-        //echo $dom->saveXML();
 
         $this->processPackageRelationships();
         $this->processDocumentCoreProperties();
@@ -737,7 +736,7 @@ class Word2007 implements WriterInterface
         // the document (once for the main doc, headers and footers) so we
         // clone the object to get a unique instance.
         $this->wordDom = clone $dom;
-        return $dom;
+        return $this->wordDom;
     }
 
     /**
@@ -745,7 +744,7 @@ class Word2007 implements WriterInterface
      */
     public function getDom()
     {
-        return $this->dom;
+        return $this->wordDom;
     }
 
     /**
