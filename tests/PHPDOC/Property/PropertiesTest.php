@@ -21,7 +21,7 @@ class PropertiesTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($prop2->has('foo'), 'new Properties($prop) can take a PropertiesInterface');
         $this->assertNotSame($prop, $prop2, 'new Properties() returned unique object');
     }
- 
+
     /**
      * @covers PHPDOC\Property\Properties::set
      */
@@ -30,7 +30,7 @@ class PropertiesTest extends \PHPUnit_Framework_TestCase
         $prop = new Properties();
         $prop->set('foo', 'bar');
         $this->assertEquals('bar', $prop->get('foo'), '->set() assigned property');
-        
+
         $expected = array('foo' => 'bar', 'baz' => 'qux');
         $prop = new Properties();
         $prop->set($expected);
@@ -47,5 +47,15 @@ class PropertiesTest extends \PHPUnit_Framework_TestCase
 
         $prop = new Properties(array('foo' => 'bar', 'baz' => 'qux'));
         $this->assertTrue($prop->hasProperties(), '->hasProperties() returns true');
+    }
+
+    /**
+     * @covers PHPDOC\Property\Properties::clear
+     */
+    public function testClear()
+    {
+        $prop = new Properties(array('foo' => 'bar', 'baz' => 'qux'));
+        $prop->clear();
+        $this->assertEmpty($prop->all(), '->clear() cleared all properties');
     }
 }
