@@ -191,17 +191,19 @@ class Section implements SectionInterface
         }
         $return = array();
         foreach ($value as $element) {
-            // All elements must be wrapped in a block element
-            if (is_string($element)
-                or ($element instanceof LinkInterface)  // Link extends Paragraph but is not truly a block
-                or !($element instanceof BlockInterface)) {
-                $element = new Paragraph($element, $element instanceof ElementInterface ? $element->getProperties() : array());
-            } elseif (!($element instanceof ElementInterface)) {
+            if (!is_string($element) and !($element instanceof ElementInterface)) {
                 $type = gettype($element);
                 if ($type == 'object') {
                     $type = get_class($element);
                 }
                 throw new \UnexpectedValueException("Assignment value not an instance of \"ElementInterface\". Got \"$type\" instead.");
+            }
+
+            // All elements must be wrapped in a block element
+            if (is_string($element)
+                or ($element instanceof LinkInterface)  // Link extends Paragraph but is not truly a block
+                or !($element instanceof BlockInterface)) {
+                $element = new Paragraph($element, $element instanceof ElementInterface ? $element->getProperties() : array());
             }
 
             $return[] = $element;
