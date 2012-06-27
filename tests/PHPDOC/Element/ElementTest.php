@@ -20,6 +20,9 @@ class ElementTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($ele->hasProperties(), '->hasProperties() returns true (PropertiesInterface)');
         $this->assertSame($prop, $ele->getProperties(), '->getProperties() returns Properties');
         $this->assertEquals('PHPDOC\\Element\\ElementInterface', $ele->getInterface(), '->getInterface() returns ElementInterface');
+
+        $ele->addElement(new Paragraph('para'));
+        $this->assertTrue($ele->hasElements(), '->hasElements() returned true.');
     }
 
     /**
@@ -28,6 +31,15 @@ class ElementTest extends \PHPUnit_Framework_TestCase
     public function testSetPropertiesException()
     {
         $ele = new Element(new \DateTime()); // throws UnexpectedValueException
+    }
+
+    /**
+     * @expectedException PHPDOC\Element\ElementException
+     */
+    public function testaddElementException()
+    {
+        $ele = new Element();
+        $ele->addElement(new \DateTime());  // throws ElementException
     }
 
 }
