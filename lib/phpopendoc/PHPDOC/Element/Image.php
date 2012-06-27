@@ -84,7 +84,7 @@ class Image extends Element implements ImageInterface
      */
     public function getWidth($allowOverride = false)
     {
-        if ($this->properties->has('width')) {
+        if ($allowOverride and $this->properties->has('width')) {
             return $this->properties->get('width');
         }
 
@@ -101,7 +101,7 @@ class Image extends Element implements ImageInterface
      */
     public function getHeight($allowOverride = false)
     {
-        if ($this->properties->has('height')) {
+        if ($allowOverride and $this->properties->has('height')) {
             return $this->properties->get('height');
         }
 
@@ -158,13 +158,13 @@ class Image extends Element implements ImageInterface
             list($proto, $data) = explode(',', $this->source, 2);
             list($mime, $enc) = explode(';', substr($proto, 5), 2);
             $decode = $enc . '_decode';
-            if (!function_exists($decode)) {
-                throw new ElementException("Unknown encoding method \"$enc\" given");
-            }
             return $decode($data);
-        } else {
-            throw new ElementException("Invalid data url for image");
         }
+
+        // @todo refactor getData so this is not needed.
+        // @codeCoverageIgnoreStart
+        throw new ElementException("Unknown error fetching image data");
+        // @codeCoverageIgnoreEnd
     }
 
     public function isFile()
