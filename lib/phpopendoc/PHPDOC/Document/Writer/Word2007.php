@@ -580,8 +580,8 @@ class Word2007 implements WriterInterface
                     $err = error_get_last();
                     throw new SaveException("Error saving document to \"$output\". Reason: " . $err['message']);
                 }
+                $this->unlink[] = $this->zipFile;
             }
-            @unlink($this->zipFile);
         }
     }
 
