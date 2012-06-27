@@ -21,13 +21,13 @@ class ElementTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($prop, $ele->getProperties(), '->getProperties() returns Properties');
         $this->assertEquals('PHPDOC\\Element\\ElementInterface', $ele->getInterface(), '->getInterface() returns ElementInterface');
     }
-    
+
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException UnexpectedValueException
      */
     public function testSetPropertiesException()
     {
-        $ele = new Element(new \DateTime()); // throws InvalidArgumentException
+        $ele = new Element(new \DateTime()); // throws UnexpectedValueException
     }
 
 }

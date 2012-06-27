@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -17,7 +17,7 @@ use PHPDOC\Property\Properties,
  * Elements can optionally subclass this base class to provide some helpful
  * shortcuts that all elements should have. If you don't subclass this base
  * class you must at least implement ElementInterface.
- * 
+ *
  * @version 1.0
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
@@ -36,7 +36,7 @@ class Element implements ElementInterface
             $this->properties = new Properties();
         }
     }
-    
+
     public function getInterface()
     {
         $r = new \ReflectionClass($this);
@@ -59,7 +59,7 @@ class Element implements ElementInterface
             if ($type == 'object') {
                 $type = get_class($properties);
             }
-            throw new \InvalidArgumentException("Unexpected properties type of \"$type\" given. Expected PropertiesInterface or array.");
+            throw new \UnexpectedValueException("Unexpected properties type of \"$type\" given. Expected PropertiesInterface or array.");
         }
         $this->properties = $properties;
     }
@@ -68,7 +68,7 @@ class Element implements ElementInterface
     {
         return $this->properties;
     }
-    
+
     public function hasProperties()
     {
         return count($this->properties) > 0;
@@ -86,7 +86,7 @@ class Element implements ElementInterface
     {
         return $this->elements;
     }
-    
+
     public function hasElements()
     {
         return $this->elements and count($this->elements) > 0;
