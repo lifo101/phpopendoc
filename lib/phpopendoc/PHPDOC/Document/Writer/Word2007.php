@@ -15,6 +15,7 @@ use PHPDOC\Document,
     PHPDOC\Document\Writer\Word2007\Formatter,
     PHPDOC\Element\ElementException,
     PHPDOC\Element\ElementInterface,
+    PHPDOC\Element\HeaderFooterInterface,
     PHPDOC\Element\Paragraph
     ;
 
@@ -33,11 +34,13 @@ class Word2007 implements WriterInterface
 
     protected $zip;
     protected $zipFile;
+    protected $docFile;
 
-    protected $relId;
     protected $relationships;
     protected $relationshipsMap;
     protected $contentTypes;
+
+    protected $unlink;
 
     /**
      * Construct a new instance
@@ -51,9 +54,10 @@ class Word2007 implements WriterInterface
         $this->properties = new Properties($properties);
         $this->formatter = new Formatter();
 
-        $this->relId = 0;
         $this->relationships = array();
         $this->relationshipsMap = array();
+        $this->unlink = array();
+
         $this->addDefaultContentTypes();
     }
 
@@ -78,10 +82,8 @@ class Word2007 implements WriterInterface
 
         $this->initArchive();
 
-        // setup DOM for main document
-        $dom = $this->setDom();
-
         // create root
+        $dom = $this->setDom();
         $root = $dom->createElement('w:document');
         $this->setDocumentNamespaces($root);
         $dom->appendChild($root);
@@ -90,16 +92,67 @@ class Word2007 implements WriterInterface
         $body = $dom->createElement('w:body');
         $root->appendChild($body);
 
-        // create the main document "Story"
-        $this->createDocument($document, $body, 'word/document.xml');
+        // create start relationship part
+        $this->docFile = '';
+        $this->addRelationship('officeDocument', 'word/document.xml');
 
-        $this->processPackageRelationships();
+        // create the document
+        $this->docFile = 'word/document.xml';
+        $this->createDocument($document, $body);
+
+        // process package parts
         $this->processDocumentCoreProperties();
         $this->processDocumentSettings();
-        $this->processDocumentRelationships();
+        $this->processRelationships();
         $this->processContentTypes();
 
         $this->saveArchive($output);
+
+        $this->cleanup();
+    }
+
+    /**
+     * Create a header/footer child document
+     *
+     * @param HeaderFooterInterface $section The document section to traverse
+     * @param \DOMNode              $node    The DOM node to append the hdr/ftr
+     *                                       reference to.
+     */
+    protected function createHeaderFooter(HeaderFooterInterface $section, \DOMNode $node, $target)
+    {
+        static $idx = array();
+
+        $position = $section->getPosition();
+
+        // create root
+        $dom = $this->setDom();
+        $root = $dom->createElement('w:' . ($position == 'header' ? 'hdr' : 'ftr'));
+        $this->setDocumentNamespaces($root);
+        $dom->appendChild($root);
+
+        $p = $position . '-' . $section->getType();
+        if (!isset($idx[$p])) {
+            $idx[$p] = 0;
+        }
+        $idx[$p] += 1;
+
+        $tmpFile = $this->docFile;
+
+        $xmlFile = 'word/' . $position . $idx[$p] . '.xml';
+        $rid = $this->addRelationship($position, $xmlFile);
+
+        $this->docFile = $xmlFile;
+        $this->createDocument($section, $root);
+        $this->addContentType('/' . $xmlFile,
+                              'application/vnd.openxmlformats-officedocument.wordprocessingml.' . $position . '+xml',
+                              true);
+
+        $this->docFile = $tmpFile;
+
+        $prop = $node->ownerDocument->createElement('w:' . $position . 'Reference');
+        $prop->appendChild(new \DOMAttr('r:id', $rid));
+        $prop->appendChild(new \DOMAttr('w:type', $section->getType()));
+        $node->appendChild($prop);
     }
 
     /**
@@ -109,62 +162,82 @@ class Word2007 implements WriterInterface
      * All relationships, content-types and media files will be added to the
      * physical archive, as needed.
      *
-     * @param Document $document Document to process.
+     * @param mixed    $document Document or Section to process.
      * @param \DOMNode $root     DOM node representing WordML document (usually the <body>)
      * @param string   $target   Filename that will be used in the archive
      */
-    protected function createDocument($document, \DOMNode $root, $target)
+    protected function createDocument($document, \DOMNode $root, $target = null)
     {
         $dom = $root->ownerDocument;
         $total = count($document);
         $idx = 0;
-        foreach ($document as $section) {
+
+        // default to the current document being created
+        if ($target === null) {
+            $target = $this->docFile;
+        }
+
+        if ($document instanceof Document) {
+            $sections = $document->getSections();
+        } else {
+            // The $document is actually a Section (technically a HeaderFooterInterface)
+            $sections = array( $document );
+        }
+        foreach ($sections as $section) {
             $idx += 1;
 
-            // The section can not be blank
-            // @todo This creates a side-effect as it causes a blank paragraph
-            //       to be added to the section object.
-            if (!$section->hasElements()) {
-                $section[] = new Paragraph();
-            }
-
             // process section body content
-            foreach ($section as $element) {
-                $this->traverseElement($element, $root, 'processElement');
+            if ($section->hasElements()) {
+                foreach ($section as $element) {
+                    $this->traverseElement($element, $root, 'processElement');
+                }
+            } else {
+                // The body can not be blank
+                if (!$section->hasElements()) {
+                    $section[] = new Paragraph();
+                }
             }
 
             // create section properties
             $sect = $dom->createElement('w:sectPr');
             $this->formatter->format($section, $sect);
 
-            // Add the section properties. It either goes INTO or AFTER the last
-            // paragraph depending if we're on the last section.
-            if ($idx == $total) {               // last section of document
-                $root->appendChild($sect);
-
-            } else {                            // last element of section
-                $node = $root->lastChild;
-                // there must be a paragraph at the end to add the sectPr
-                if ($node->nodeName != 'w:p') {
-                    $node = $dom->createElement('w:p');
-                    $root->appendChild();
+            if (!($section instanceof HeaderFooterInterface)) {
+                // process any headers and footers
+                $list = array_merge($section->getHeaders(), $section->getFooters());
+                foreach ($list as $hf) {
+                    $this->createHeaderFooter($hf, $sect, $target);
                 }
 
-                // the fist node must be an <w:pPr> element
-                if (!$node->firstChild or $node->firstChild->nodeName != 'w:pPr') {
-                    // insert a new <w:pPr> node at the beginning
-                    if ($node->firstChild) {
-                        $node = $node->insertBefore($dom->createElement('w:pPr'), $node->firstChild);
-                    } else {
-                        $ppr = $dom->createElement('w:pPr');
-                        $node->appendChild($ppr);
-                        $node = $ppr;
+                // Add the section properties. It either goes INTO or AFTER the
+                // last paragraph depending if we're on the last section.
+                if ($idx == $total) {               // last section of document
+                    $root->appendChild($sect);
+
+                } else {                            // last element of section
+                    $node = $root->lastChild;
+                    // there must be a paragraph at the end to add the sectPr
+                    if ($node->nodeName != 'w:p') {
+                        $node = $dom->createElement('w:p');
+                        $root->appendChild();
                     }
-                } else {
-                    $node = $node->firstChild;  // point to <w:pPr>
-                }
 
-                $node->appendChild($sect);
+                    // the fist node must be an <w:pPr> element
+                    if (!$node->firstChild or $node->firstChild->nodeName != 'w:pPr') {
+                        // insert a new <w:pPr> node at the beginning
+                        if ($node->firstChild) {
+                            $node = $node->insertBefore($dom->createElement('w:pPr'), $node->firstChild);
+                        } else {
+                            $ppr = $dom->createElement('w:pPr');
+                            $node->appendChild($ppr);
+                            $node = $ppr;
+                        }
+                    } else {
+                        $node = $node->firstChild;  // point to <w:pPr>
+                    }
+
+                    $node->appendChild($sect);
+                }
             }
         }
 
@@ -310,10 +383,9 @@ class Word2007 implements WriterInterface
         $node = $dom->createElement('w:hyperlink');
         $root->appendChild($node);
 
-        $rid = $this->getRelationId('hyperlink', $element->getTarget());
+        $rid = $this->getRelationshipId('hyperlink', $element->getTarget());
         if (!$rid) {
-            $rid = $this->getNextRelationId();
-            $this->addRelation($rid, 'hyperlink', $element->getTarget(), $element->getTarget(), 'External');
+            $rid = $this->addRelationship('hyperlink', $element->getTarget(), $element->getTarget(), true);
         }
 
         $node->appendChild(new \DOMAttr('r:id', $rid));
@@ -371,17 +443,14 @@ class Word2007 implements WriterInterface
             $src = sha1($src);
         }
 
-        $rid = $this->getRelationId('image', $src);
+        $rid = $this->getRelationshipId('image', $src);
         if (!$rid) {
             $imgId += 1;
-            $rid = $this->getNextRelationId();
             $target = sprintf('%s/image%d.%s',
-                              $this->properties->get('media_path', 'word/media'),
+                              trim($this->properties->get('media_path', 'word/media'), '/'),
                               $imgId,
                               $element->getExtension()
             );
-            // make sure there's no leading slash
-            $target = ltrim($target, '/');
 
             if ($element->isFile()) {
                 // remote files must be saved locally before we can add it to
@@ -395,8 +464,9 @@ class Word2007 implements WriterInterface
                         throw new SaveException($e->getMessage());
                     }
                     $this->addFile($tmp, $target);
+
                     // can't unlink the file until after the ZIP is closed
-                    register_shutdown_function(function(){ @unlink($tmp); });
+                    $this->unlink[]= $tmp;
                 } else {
                     $this->addFile($src, $target);
                 }
@@ -404,7 +474,7 @@ class Word2007 implements WriterInterface
                 $this->addFileFromString($element->getData(), $target);
             }
             $this->addContentType($element->getExtension(), $element->getContentType());
-            $this->addRelation($rid, 'image', '/' . $target, $src);
+            $rid = $this->addRelationship('image', $target, $src);
         }
 
         $dom = $root->ownerDocument;
@@ -420,7 +490,7 @@ class Word2007 implements WriterInterface
 
         $fill = $dom->createElement('v:imagedata');
         $fill->appendChild(new \DOMAttr('r:id', $rid));
-        $fill->appendChild(new \DOMAttr('o:title', ''));
+        $fill->appendChild(new \DOMAttr('o:title', $element->getProperties()->get('title', '')));
 
         $root->appendChild($node);
         $node->appendChild($rect);
@@ -515,21 +585,6 @@ class Word2007 implements WriterInterface
         }
     }
 
-    /**
-     * Process all package relationships and add them to the archive
-     */
-    private function processPackageRelationships()
-    {
-        // no need to waste memory and use DOMDocument here
-        $xml = array();
-        $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-        $xml[] = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-        $xml[] = '  <Relationship Id="' . $this->getNextRelationId() . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml" />';
-        $xml[] = '</Relationships>';
-
-        $this->addFileFromString(implode("\n", $xml), '_rels/.rels');
-    }
-
     private function processDocumentCoreProperties()
     {
         $xml = array();
@@ -551,35 +606,41 @@ class Word2007 implements WriterInterface
         //$source = $this->properties->get('static_path', __DIR__ . '/../../../../../static') . '/settings.xml';
         //
         //$this->addContentType('/word/settings.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml', true);
-        //$this->addRelation($this->getNextRelationId(), 'settings', 'settings.xml');
+        //$this->addRelationship('settings', 'settings.xml');
         //$this->addFile($source, 'word/settings.xml');
     }
 
     /**
-     * Process all Document relationships and add them to the archive
+     * Process all relationships for the Package and Document.
      */
-    private function processDocumentRelationships()
+    private function processRelationships()
     {
-        // no need to waste memory and use DOMDocument here
-        $xml = array();
-        $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-        $xml[] = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-        foreach ($this->relationships as $rel) {
-            $node = sprintf('  <Relationship Id="%s" Target="%s" '
-                            . 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/%s"',
-                $rel['Id'],
-                $rel['Target'],
-                $rel['Type']
-            );
-            if (isset($rel['TargetMode'])) {
-                $node .= sprintf(' TargetMode="%s"', $rel['TargetMode']);
+        foreach ($this->relationships as $file => $rel) {
+            if (!$rel['rels']) {
+                // do nothing if there's no relationships defined
+                continue;
             }
-            $node .= "/>";
-            $xml[] = $node;
-        }
-        $xml[] = '</Relationships>';
 
-        $this->addFileFromString(implode("\n", $xml), 'word/_rels/document.xml.rels');
+            $xml = array();
+            $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+            $xml[] = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+            foreach ($rel['rels'] as $r) {
+                $node = sprintf('  <Relationship Id="%s" Target="%s" '
+                                . 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/%s"',
+                                $r['Id'],
+                                $r['Target'],
+                                $r['Type']
+                );
+                if (isset($r['TargetMode'])) {
+                    $node .= sprintf(' TargetMode="%s"', $r['TargetMode']);
+                }
+                $node .= "/>";
+                $xml[] = $node;
+            }
+            $xml[] = '</Relationships>';
+
+            $this->addFileFromString(implode("\n", $xml), $rel['file']);
+        }
     }
 
     /**
@@ -605,35 +666,96 @@ class Word2007 implements WriterInterface
         $this->addFileFromString(implode("\n", $xml), '[Content_Types].xml');
     }
 
+    private function startRelationshipsPart($file)
+    {
+        $pi = pathinfo($file);
+        $dirname = isset($pi['dirname']) ? '/' . ltrim($pi['dirname'], '/') : '';
+        $this->relationships[$file] = array(
+            'file' => ltrim(sprintf('%s/_rels/%s.rels', $dirname, $pi['basename']), '/'),
+            'root' => $dirname,
+            'rid'  => 0,
+            'rels' => array()
+        );
+    }
+
     /**
      * Add a new relationship.
      *
-     * Note: Document relationships are relative to the _rels path.
+     * Note: Document relationships are relative to the current docFile
      *
-     * $param string $rid    The Relationship ID
-     * @param string $type   The type of relationship (eg: 'image', 'hyperlink', ...)
-     * @param string $target The target of the relationship
-     * @param string $source The common source (used to map identical resources together)
-     * @param string $mode   The optional mode of the target
+     * @param string $type     The type of relationship (eg: 'image', 'hyperlink', ...)
+     * @param string $target   The target of the relationship
+     * @param string $source   The common source (used to map identical resources together)
+     * @param string $external If true the TargetMode is "External"
+     * @return string Return the new relationship ID (rId)
      */
-    private function addRelation($rid, $type, $target, $source = null, $mode = null)
+    private function addRelationship($type, $target, $source = null, $external = false)
     {
-        $this->relationships[$rid] = array(
+        // start a new relationship part for this docFile, if needed
+        if (!isset($this->relationships[$this->docFile])) {
+            $this->startRelationshipsPart($this->docFile);
+        }
+
+        // alter the target to be relative to the current docFile
+        if (!$external and $this->docFile != '' and strpos($target, '/') !== false) {
+            $root = explode('/', ltrim($this->relationships[$this->docFile]['root'], '/'));
+            $ours = array_filter(explode('/', ltrim(dirname($target), '/')), function($d){ return $d != '.'; });
+            $min = min(count($root), count($ours));
+            $ofs = 0;
+            for ($i=0; $i<$min; $i++) {
+                if ($root[$i] == $ours[$i]) {
+                    $ofs++;
+                } else {
+                    break;
+                }
+            }
+            $slice = array_slice($ours, $ofs);
+            if ($slice) {
+                $target = ($ofs ? implode('/', $slice) . '/' : '') . basename($target);
+            } else {
+                $target = basename($target);
+            }
+        }
+
+        $rid = $this->getNextRelationshipId();
+        $this->relationships[$this->docFile]['rels'][$rid] = array(
             'Id' => $rid,
             'Type' => $type,
             'Target' => $target,
-            'TargetMode' => $mode
+            'TargetMode' => $external ? "External" : null
         );
         if ($source !== null) {
-            $this->relationshipsMap[$type][$source] = $rid;
+            $this->relationshipsMap[$this->docFile][$type][$source] = $rid;
         }
-        return $this;
+        return $rid;
     }
 
-    private function getRelationId($type, $source)
+    /**
+     * Return the next available Relationship ("rId")
+     *
+     * @param string $prefix String prefix for the returned ID
+     */
+    protected function getNextRelationshipId($prefix = 'rId')
     {
-        if (isset($this->relationshipsMap[$type][$source])) {
-            return $this->relationshipsMap[$type][$source];
+        // start a new relationship part for this docFile, if needed
+        if (!isset($this->relationships[$this->docFile])) {
+            $this->startRelationshipsPart($this->docFile);
+        }
+        $this->relationships[$this->docFile]['rid'] += 1;
+        return $prefix . $this->relationships[$this->docFile]['rid'];
+    }
+
+    /**
+     * Return the current rId for something.
+     *
+     * @param string $type   The relationship Type
+     * @param string $source The relationship common source
+     * @return string Return the rId matching the type+source or null if not found.
+     */
+    private function getRelationshipId($type, $source)
+    {
+        if (isset($this->relationshipsMap[$this->docFile][$type][$source])) {
+            return $this->relationshipsMap[$this->docFile][$type][$source];
         }
         return null;
     }
@@ -673,17 +795,6 @@ class Word2007 implements WriterInterface
             ->addContentType('/wordProps/core.xml', 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties', true)
             ->addContentType('/wordProps/app.xml', 'application/vnd.openxmlformats-officedocument.extended-properties+xml', true)
             ;
-    }
-
-    /**
-     * Return the next available Relationship ("rId")
-     *
-     * @param string $prefix String prefix for the returned ID
-     */
-    protected function getNextRelationId($prefix = 'rId')
-    {
-        $this->relId += 1;
-        return $prefix . $this->relId;
     }
 
     /**
@@ -735,7 +846,7 @@ class Word2007 implements WriterInterface
             $dom->xmlStandalone = true;
             $dom->formatOutput = true;
         }
-        if (!isset($this->wordDom) or $force) {
+        if (!isset($this->wordDom) or $isWordDom) {
             $this->wordDom = $dom;
         }
         return $dom;
@@ -761,5 +872,17 @@ class Word2007 implements WriterInterface
     {
         $writer = new Word2007();
         return $writer->save($output, $document);
+    }
+
+    /**
+     * Perform any cleanup that might be necessary
+     */
+    protected function cleanup()
+    {
+        if ($this->unlink) {
+            foreach ($this->unlink as $file) {
+                @unlink($file);
+            }
+        }
     }
 }
