@@ -87,7 +87,7 @@ class SectionFormatter extends Shared
                 $v = Translator::inchToTwip($v);
             }
 
-            $prop->appendChild(new \DOMAttr($attr, $v));
+            $prop->appendChild(new \DOMAttr('w:' . $attr, $v));
         }
 
         $root->appendChild($prop);
