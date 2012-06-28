@@ -41,6 +41,22 @@ class Section implements SectionInterface
         } else {
             $this->properties = new Properties();
         }
+        $this->addDefaultProperties();
+    }
+
+    protected function addDefaultProperties()
+    {
+        $defaults = array(
+            'page' => 'portrait',
+            'margin' => 1.0,
+            'cols' => 0.5,
+        );
+
+        foreach ($defaults as $k => $v) {
+            if (!$this->properties->has($k)) {
+                $this->properties->set($k, $v);
+            }
+        }
     }
 
     public function getInterface()
