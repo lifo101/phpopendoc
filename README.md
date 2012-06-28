@@ -8,21 +8,24 @@ tranformations.
 ## Development Status
 
 __This library is in early development but can now produce a working Word 2007 "docx" document (barely).__
-The XML writer class does actually work but the structure of the XML may change a few times before
-I finalize its structure. Right now its a hybrid of XHTML and WordML that I use for testing purposes.
+The XML writer also works but the structure of the XML may change a few times before
+I finalize its structure. Right now its a hybrid of XHTML and WordML that I used for 
+testing purposes (however, most of my testing is now done with the Word2007 writer).
+The XML writer has fallen behind slightly and doesn't support some of the newer
+elements.
 
 ## Synopsis
 
-I needed a non-windows solution for creating Word documents ("docx" files) and
-got tired of the lack of support, limited API and the countless bugs in existing
-projects that I've found. So I started work on this project. I wasn't sure what
-name to give it, so for now "PHP Open Doc" will suffice, but may change in the
-future.
+I needed a non-windows solution for creating Word documents ("docx" files) and got 
+tired of existing libraries. Mainly because of lack of support, limited API, or bugs. 
+So I started work on this project. I wasn't sure what name to give it, so for now 
+"PHP Open Doc" will suffice, but may change in the future.
 
 I wanted a library that gave me a clear and easy API to create documents using a
 proper object oriented interface and that offered flexibility with more than one
 way to do certain things. I also wanted the API to be have fully automated unit
-tests and have 100% code coverage.
+tests and have as close to 100% code coverage as possible (right now I'm finding it
+hard to write any tests for the Writer classes).
 
 ## Requirements
 
@@ -32,10 +35,23 @@ tests and have 100% code coverage.
 
 ## Features
 
-* Uses [namespaces](http://php.net/manual/en/language.namespaces.php)
-* Easy and flexible API
-* Save documents as [WordML](http://en.wikipedia.org/wiki/Office_Open_XML) (MS Word "docx") or plain XML
-* Uhhh... and other stuff... Too early to list stuff here...
+* Save as MSWord "docx" file ([WordML](http://en.wikipedia.org/wiki/Office_Open_XML))
+* Save as plain XML
+* Easy and flexible Object Orientented API
+  * Uses the "Program to an Interface" design principles
+  * Uses [namespaces](http://php.net/manual/en/language.namespaces.php)
+  * Uses advanced [SPL interfaces](http://php.net/manual/en/book.spl.php)
+* Ever growing list of supported document Elements:
+  * Bookmark
+  * Br (break)
+  * Header/Footer
+  * Image
+  * Paragraph
+  * Table
+  * Text
+* Property "bubbling."
+  _Put simply: Properties on an element will bubble up to their parent, as needed._
+* ... _place awesomesauce here_ ...
 
 ## Examples
 
@@ -65,6 +81,8 @@ $sec[] = new Text("Here is one more that is green...", array('color' => '00DD00'
 // The Section variable is not just a normal array
 $sec->set("Just another sentence"); 
 
+// Header/footers can contain any block level content
+// like paragraphs, tables and images.
 $sec->addHeader()->set("My Header");
 
 Writer\XML::saveDocument($doc); // output to STDOUT
