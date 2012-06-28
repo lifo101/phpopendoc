@@ -10,7 +10,8 @@ namespace PHPDOC;
 
 use PHPDOC\Element\Section,
     PHPDOC\Element\SectionInterface,
-    PHPDOC\Property\Properties
+    PHPDOC\Property\Properties,
+    PHPDOC\Property\PropertiesInterface
     ;
 
 /**
@@ -34,25 +35,31 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
         $this->sections = array();
     }
 
-    //public function setProperty($key, $value)
-    //{
-    //    $this->properties[$key] = $value;
-    //    return $this;
-    //}
-    //
-    //public function setProperties($properties)
-    //{
-    //    if ($properties instanceof PropertyBag) {
-    //        $this->properties = $properties;
-    //    } elseif (is_array($properties)) {
-    //        foreach ($properties as $key => $val) {
-    //            $this->properties[$key] = $val;
-    //        }
-    //    } else {
-    //        throw new \InvalidArgumentException("Invalid type \"" . get_class($properties) . "\" given. Expected PropertyBag or array.");
-    //    }
-    //    return $this;
-    //}
+    public function getProperties()
+    {
+        return $this->properties;
+    }
+
+    public function setProperty($key, $value)
+    {
+        $this->properties[$key] = $value;
+        return $this;
+    }
+
+    public function setProperties($properties)
+    {
+        if (is_array($properties)) {
+            $properties = new Properties($properties);
+        }
+        if (!($properties instanceof PropertiesInterface)) {
+            $type = gettype($properties);
+            if ($type == 'object') {
+                $type = get_class($properties);
+            }
+            throw new \InvalidArgumentException("Unexpected properties type of \"$type\" given. Expected PropertiesInterface or array.");
+        }
+        $this->properties = $properties;
+    }
 
 
     /**

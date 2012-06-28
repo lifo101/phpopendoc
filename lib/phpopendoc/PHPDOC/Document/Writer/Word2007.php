@@ -95,14 +95,14 @@ class Word2007 implements WriterInterface
         // create start relationship part
         $this->docFile = '';
         $this->addRelationship('officeDocument', 'word/document.xml');
+        $this->processDocumentSettings($document);
+        $this->processDocumentCoreProperties($document);
 
         // create the document
         $this->docFile = 'word/document.xml';
         $this->createDocument($document, $body);
 
         // process package parts
-        $this->processDocumentCoreProperties();
-        $this->processDocumentSettings();
         $this->processRelationships();
         $this->processContentTypes();
 
@@ -136,11 +136,10 @@ class Word2007 implements WriterInterface
         }
         $idx[$p] += 1;
 
-        $tmpFile = $this->docFile;
-
         $xmlFile = 'word/' . $position . $idx[$p] . '.xml';
         $rid = $this->addRelationship($position, $xmlFile);
 
+        $tmpFile = $this->docFile;
         $this->docFile = $xmlFile;
         $this->createDocument($section, $root);
         $this->addContentType('/' . $xmlFile,
@@ -430,6 +429,32 @@ class Word2007 implements WriterInterface
     }
 
     /**
+     * Process a <w:cr/> element
+     */
+    private function processCrElement(ElementInterface $element, \DOMNode $root)
+    {
+        $node = $root->ownerDocument->createElement('w:cr');
+        $root->appendChild($node);
+        return $root;
+    }
+
+    /**
+     * Process a <w:br/> element
+     */
+    private function processBrElement(ElementInterface $element, \DOMNode $root)
+    {
+        $node = $root->ownerDocument->createElement('w:br');
+        if ($element->getType() !== null and $element->getType() !== 'textWrapping') {
+            $node->appendChild(new \DOMAttr('w:type', $element->getType()));
+        }
+        if ($element->getClear() !== null and $element->getClear() !== 'none') {
+            $node->appendChild(new \DOMAttr('w:clear', $element->getClear()));
+        }
+        $root->appendChild($node);
+        return $root;
+    }
+
+    /**
      * Processes a single media element. Updates the archive with its
      * content-type, relationship and media (image) file.
      */
@@ -585,29 +610,99 @@ class Word2007 implements WriterInterface
         }
     }
 
-    private function processDocumentCoreProperties()
+    private function processDocumentCoreProperties(Document $document)
     {
+        static $tags = array(
+            'category'              => 'cp',
+            'contentStatus'         => 'cp',
+            'contentType'           => 'cp',
+            'created'               => 'dcterms',
+            'creator'               => 'dc',
+            'description'           => 'dc',
+            'identifier'            => 'dc',
+            'keywords'              => 'cp',
+            'language'              => 'dc',
+            'lastModifiedBy'        => 'cp',
+            'lastPrinted'           => 'cp',
+            'modified'              => 'dcterms',
+            'revision'              => 'cp',
+            'subject'               => 'dc',
+            'title'                 => 'dc',
+            'version'               => 'cp',
+        );
+
+        $props = $document->getProperties();
+        $core = isset($props['core']) ? $props['core'] : array();
+
+        // automatically set dates if not defined ...
+        if (!isset($core['created'])) {
+            $core['created'] = new \DateTime();
+        }
+        //if (!isset($core['modified'])) {
+        //    $core['modified'] = new \DateTime();
+        //}
+
         $xml = array();
-        $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-        $xml[] = '<coreProperties'
-            . 'xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"'
-            . 'xmlns:dcterms="http://purl.org/dc/terms/"'
-            . 'xmlns:dc="http://purl.org/dc/elements/1.1/"'
-            . 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">';
+        $xml[] = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>';
+        $xml[] = '<cp:coreProperties'
+                   . ' xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"'
+                   . ' xmlns:dc="http://purl.org/dc/elements/1.1/"'
+                   . ' xmlns:dcterms="http://purl.org/dc/terms/"'
+                   . ' xmlns:dcmitype="http://purl.org/dc/dcmitype/"'
+                   . ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+                   . '>'
+        ;
 
-        $xml[] = '</coreProperties>';
+        foreach ($core as $k => $v) {
+            if (!isset($tags[$k])) {
+                // @todo emit warning or throw Exception for unknown properties?
+                continue;
+            }
 
+            $tag = $tags[$k] . ':' . $k;
+
+            $attr = '';
+            if ($tags[$k] == 'dcterms') {
+                $attr = ' xsi:type="dcterms:W3CDTF"';
+
+                if (!($v instanceof \DateTime)) {
+                    try {
+                        $v = new \DateTime($v);
+                    } catch (\Exception $e) {
+                        throw new SaveException("Invalid timestamp format for core property $k: \"$v\"");
+                    }
+                }
+            }
+
+            if ($v instanceof \DateTime) {
+                $value = $v->format(DATE_W3C);
+            } else {
+                $value = htmlentities($v, ENT_NOQUOTES, 'utf-8');
+            }
+
+            $xml[] = sprintf('  <%s%s>%s</%s>', $tag, $attr, $value, $tag);
+        }
+
+        $xml[] = '</cp:coreProperties>';
+
+        // The type of this relationship has a different uri than the others
+        // so we have to use the full path here.
+        $this->addRelationship('http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties',
+                               'docProps/core.xml');
         $this->addFileFromString(implode("\n", $xml), 'docProps/core.xml');
     }
 
-    private function processDocumentSettings()
+    private function processDocumentSettings(Document $document)
     {
-        //// @todo Move static directory somewhere else more appropriate
-        //$source = $this->properties->get('static_path', __DIR__ . '/../../../../../static') . '/settings.xml';
-        //
-        //$this->addContentType('/word/settings.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml', true);
-        //$this->addRelationship('settings', 'settings.xml');
-        //$this->addFile($source, 'word/settings.xml');
+        // @todo Move static directory somewhere else more appropriate
+        $source = $this->properties->get('static_path', __DIR__ . '/../../../../../static') . '/settings.xml';
+        if (@file_exists($source)) {
+            $this->addContentType('/word/settings.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml', true);
+            $this->addRelationship('settings', 'settings.xml');
+            $this->addFile($source, 'word/settings.xml');
+        } else {
+            // @todo Emit warning or throw Exception?
+        }
     }
 
     /**
@@ -625,10 +720,12 @@ class Word2007 implements WriterInterface
             $xml[] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
             $xml[] = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
             foreach ($rel['rels'] as $r) {
+                $root = strpos($r['Type'], '://') === false ? 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/' : '';
                 $node = sprintf('  <Relationship Id="%s" Target="%s" '
-                                . 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/%s"',
+                                . 'Type="%s%s"',
                                 $r['Id'],
                                 $r['Target'],
+                                $root,
                                 $r['Type']
                 );
                 if (isset($r['TargetMode'])) {
@@ -697,7 +794,10 @@ class Word2007 implements WriterInterface
         }
 
         // alter the target to be relative to the current docFile
-        if (!$external and $this->docFile != '' and strpos($target, '/') !== false) {
+        if (!$external
+            and $this->docFile != ''
+            and strpos($target, '/') !== false
+            and strpos($target, '://') == false) {
             $root = explode('/', ltrim($this->relationships[$this->docFile]['root'], '/'));
             $ours = array_filter(explode('/', ltrim(dirname($target), '/')), function($d){ return $d != '.'; });
             $min = min(count($root), count($ours));
@@ -792,8 +892,8 @@ class Word2007 implements WriterInterface
             ->addContentType('xml', 'application/xml')
             ->addContentType('rels', 'application/vnd.openxmlformats-package.relationships+xml')
             ->addContentType('/word/document.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml', true)
-            ->addContentType('/wordProps/core.xml', 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties', true)
-            ->addContentType('/wordProps/app.xml', 'application/vnd.openxmlformats-officedocument.extended-properties+xml', true)
+            ->addContentType('/docProps/core.xml', 'application/vnd.openxmlformats-package.core-properties+xml', true)
+            ->addContentType('/docProps/app.xml', 'application/vnd.openxmlformats-officedocument.extended-properties+xml', true)
             ;
     }
 
