@@ -27,7 +27,8 @@ class SectionFormatter extends Shared
         'pageSize'      => 'pgSz',
         'pgsz'          => 'pgSz',
         'grid'          => 'docGrid',
-        'valign'        => 'vAlign'
+        'valign'        => 'vAlign',
+        'margin'        => 'pgMar',
     );
 
     protected function initMap()
@@ -48,6 +49,44 @@ class SectionFormatter extends Shared
             'type'                  => 'type',
             'vAlign'                => 'text'
         ) + $this->map;
+    }
+
+    protected function process_margin($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $attrs = array('top', 'right', 'bottom', 'left',
+                              'header', 'footer', 'gutter');
+        static $aliases = array(
+        );
+
+        // assume a margin width is being set for all sides
+        if (!is_array($val)) {
+            $val = array(
+                'top' => $val,
+                'right' => $val,
+                'bottom' => $val,
+                'left' => $val,
+                'header' => $val / 2,
+                'footer' => $val / 2,
+                'gutter' => 0,
+            );
+        }
+
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+
+        foreach ($val as $key => $v) {
+            $attr = $this->lookupAlias($key, $aliases);
+            if (!in_array($attr, $attrs)) {
+                continue;
+            }
+
+            $v = Translator::inchToTwip($v);
+            $prop->appendChild(new \DOMAttr('w:' . $attr, $v));
+        }
+
+        $root->appendChild($prop);
+
+        return true;
     }
 
     /**
