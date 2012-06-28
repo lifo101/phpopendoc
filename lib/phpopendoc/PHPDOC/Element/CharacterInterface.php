@@ -4,11 +4,11 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
-// @codeCoverageIgnoreStart 
+// @codeCoverageIgnoreStart
 
 /**
  * CharacterInterface
@@ -19,4 +19,7 @@ namespace PHPDOC\Element;
  */
 interface CharacterInterface
 {
+    public function getType();
+
+    public function getClear();
 }

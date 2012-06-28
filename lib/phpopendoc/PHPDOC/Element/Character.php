@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -18,21 +18,30 @@ use PHPDOC\Property\Properties,
  * @since 1.0
  * @author Jason Morriss  <lifo101@gmail.com>
  */
-class Character extends Element implements CharacterInterface
+abstract class Character extends Element implements CharacterInterface
 {
-    public function hasContent()
-    {
-         return true;
-    }
-    
     public function getElements()
     {
         return array();
     }
-    
+
     public function hasElements()
     {
         return false;
     }
-    
+
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    public function getClear()
+    {
+        return $this->clear;
+    }
+
+    public function getInterface()
+    {
+        return get_class($this) . 'Interface';
+    }
 }
