@@ -13,10 +13,15 @@ use PHPDOC\Document,
     PHPDOC\Document\WriterInterface,
     PHPDOC\Document\Writer\Exception\SaveException,
     PHPDOC\Document\Writer\Word2007\Formatter,
+    PHPDOC\Document\Writer\Word2007\Formatter\StyleFormatter,
+    PHPDOC\Style\StyleInterface,
+    PHPDOC\Style\ParagraphStyle,
     PHPDOC\Element\ElementException,
     PHPDOC\Element\ElementInterface,
     PHPDOC\Element\HeaderFooterInterface,
-    PHPDOC\Element\Paragraph
+    PHPDOC\Element\Paragraph,
+    PHPDOC\Element\TextRun,
+    PHPDOC\Element\Table
     ;
 
 /**
@@ -57,8 +62,6 @@ class Word2007 implements WriterInterface
         $this->relationships = array();
         $this->relationshipsMap = array();
         $this->unlink = array();
-
-        $this->addDefaultContentTypes();
     }
 
     /**
@@ -92,18 +95,22 @@ class Word2007 implements WriterInterface
         $body = $dom->createElement('w:body');
         $root->appendChild($body);
 
-        // create start relationship part
+        // create start package relationships
         $this->docFile = '';
         $this->addRelationship('officeDocument', 'word/document.xml');
         $this->processDocumentSettings($document);
         $this->processDocumentCoreProperties($document);
 
-        // create the document
+        // create the main document
         $this->docFile = 'word/document.xml';
+        // create styles before the document so we can determine if a style is
+        // valid before it's used.
+        $this->processDocumentStyles($document);
         $this->createDocument($document, $body);
 
         // process package parts
         $this->processRelationships();
+        $this->addDefaultContentTypes();
         $this->processContentTypes();
 
         $this->saveArchive($output);
@@ -524,6 +531,55 @@ class Word2007 implements WriterInterface
         return $root;
     }
 
+    private function processTextStyle(StyleInterface $style, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+
+        $root->appendChild(new \DOMAttr('w:type', 'character'));
+
+        // add general properties
+        $element = new Paragraph(null, $style->getProperties());
+        $sf = new StyleFormatter();
+        $sf->format($element, $root);
+
+        // add run properties (for paragraph mark)
+        $element = new TextRun(null, $style->getProperties());
+        $prop = $dom->createElement('w:rPr');
+        if ($this->formatter->format($element, $prop)) {
+            $root->appendChild($prop);
+        }
+
+        return $root;
+
+    }
+
+    private function processParagraphStyle(StyleInterface $style, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+
+        $root->appendChild(new \DOMAttr('w:type', 'paragraph'));
+
+        // add general properties
+        $element = new Paragraph(null, $style->getProperties());
+        $sf = new StyleFormatter();
+        $sf->format($element, $root);
+
+        // add paragraph properties
+        $prop = $dom->createElement('w:pPr');
+        if ($this->formatter->format($element, $prop)) {
+            $root->appendChild($prop);
+        }
+
+        // add run properties (for paragraph mark)
+        $element = new TextRun(null, $style->getProperties());
+        $prop = $dom->createElement('w:rPr');
+        if ($this->formatter->format($element, $prop)) {
+            $root->appendChild($prop);
+        }
+
+        return $root;
+    }
+
     /**
      * Traverse a document element and all of its children
      *
@@ -690,6 +746,77 @@ class Word2007 implements WriterInterface
         $this->addRelationship('http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties',
                                'docProps/core.xml');
         $this->addFileFromString(implode("\n", $xml), 'docProps/core.xml');
+    }
+
+    private function processDocumentStyles(Document $document)
+    {
+        static $namespaces = array(
+            'xmlns:r'   => 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+            'xmlns:w'   => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+        );
+
+        // styles are more complex so using DOMDocument here is warranted
+        $dom = $this->setDom();
+        $root = $dom->createElement('w:styles');
+        $dom->appendChild($root);
+
+        foreach ($namespaces as $ns => $uri) {
+            $root->appendChild(new \DOMAttr($ns, $uri));
+        }
+
+        // add default styles
+        $docDefaults = $dom->createElement('w:docDefaults');
+        $root->appendChild($docDefaults);
+
+        $defaults = array(
+            'paragraph' => $dom->createElement('w:pPrDefault'),
+            'text'      => $dom->createElement('w:rPrDefault')
+        );
+        foreach ($document->getDefaultStyles() as $s) {
+            $type = $s->getType();
+            if (isset($defaults[$type])) {
+                // create a new node <w:rPr> or <w:pPr>
+                $defaultRoot = $dom->createElement( substr($defaults[$type]->nodeName, 0, 5) );
+                $docDefaults->appendChild($defaults[$type]);
+                $defaults[$type]->appendChild($defaultRoot);
+
+                // @todo The formatter might need to be refactored to NOT
+                // require an ElementInterface instance.
+                // a temporary element must be created in order to apply the
+                // proper formatting. If $type if 'text' it needs to be a 'TextRun'.
+                if ($type == 'text') {
+                    $type .= 'Run';
+                }
+                $class = 'PHPDOC\\Element\\' . ucfirst($type);  // PHPDOC\Element\Paragraph or PHPDOC\Element\TextRun
+                $element = new $class(null, $s->getProperties());
+                $this->formatter->format($element, $defaultRoot);
+            }
+        }
+
+        if (!$document->getStyle('Normal')) {
+            $document[] = new ParagraphStyle('Normal');
+        }
+        // add remaining styles
+        foreach ($document->getStyles() as $style) {
+            $type = $style->getType();
+            $method = 'process' . ucfirst($type) . 'Style';
+            if (method_exists($this, $method)) {
+                $node = $dom->createElement('w:style');
+                $node->appendChild(new \DOMAttr('w:styleId', $style->getId()));
+
+                $name = $dom->createElement('w:name');
+                $name->appendChild(new \DOMAttr('w:val', $style->getName()));
+                $node->appendChild($name);
+
+                if ($this->$method($style, $node)) {
+                    $root->appendChild($node);
+                }
+            }
+        }
+
+        $this->addContentType('/word/styles.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml', true);
+        $this->addRelationship('styles', 'word/styles.xml');
+        $this->addFileFromString($dom->saveXML(), 'word/styles.xml');
     }
 
     private function processDocumentSettings(Document $document)

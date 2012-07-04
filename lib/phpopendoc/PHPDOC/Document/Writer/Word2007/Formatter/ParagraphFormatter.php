@@ -28,6 +28,7 @@ class ParagraphFormatter extends Shared
         'indent'    => 'ind',
         'outline'   => 'outlineLvl',
         'style'     => 'pStyle',
+        //'font'      => 'pFonts',
     );
 
     protected function initMap()
@@ -50,6 +51,7 @@ class ParagraphFormatter extends Shared
             'overflowPunct'         => 'bool',
             'pageBreakBefore'       => 'bool',
             'pBdr'                  => 'border',
+            'pFonts'                => 'font',
             'pStyle'                => 'text',
             'rPr'                   => 'run',
             'shd'                   => 'shd',

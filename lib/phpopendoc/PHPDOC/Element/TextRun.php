@@ -4,7 +4,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Element;
 
@@ -47,27 +47,38 @@ class TextRun extends Element implements TextRunInterface
      */
     public function __construct($elements = null, $properties = null)
     {
+        // assume a style ID is being passed in if $properties is a string
+        if (is_string($properties)) {
+            $properties = array( 'rStyle' => $properties );
+        }
+
         parent::__construct($properties);
-        if (!is_array($elements)) {
+        if ($elements and !is_array($elements)) {
             $elements = array( $elements );
         }
-        foreach ($elements as $element) {
-            if ($element instanceof TextInterface) {
-                // if the Text element has any properties we have to transfer
-                // those properties over to the TextRun since Text elements
-                // can not have properties of their own.
-                if ($element->hasProperties()) {
-                    foreach ($element->getProperties() as $key => $val) {
-                        $this->properties[$key] = $val;
-                    }
-                }
-            } elseif ($element instanceof LinkInterface) {
-                throw new ElementException("A Link can not be nested inside a TextRun");
-            } elseif (!($element instanceof ElementInterface)) {
-                $element = new Text($element);
+        if ($elements) {
+            foreach ($elements as $element) {
+                $this->addElement($element);
             }
-            $this->elements[] = $element;
         }
     }
-    
+
+    public function addElement($element)
+    {
+        if ($element instanceof TextInterface) {
+            // if the Text element has any properties we have to transfer
+            // those properties over to the TextRun since Text elements
+            // can not have properties of their own.
+            if ($element->hasProperties()) {
+                foreach ($element->getProperties() as $key => $val) {
+                    $this->properties[$key] = $val;
+                }
+            }
+        } elseif ($element instanceof LinkInterface) {
+            throw new ElementException("A Link can not be nested inside a TextRun");
+        } elseif (!($element instanceof ElementInterface)) {
+            $element = new Text($element);
+        }
+        $this->elements[] = $element;
+    }
 }

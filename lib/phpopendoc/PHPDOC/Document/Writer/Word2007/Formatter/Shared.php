@@ -127,6 +127,27 @@ class Shared
         return $this->appendSimpleValue($root, $name, $val);
     }
 
+    protected function process_font($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $attrs = array('ascii', 'cs', 'eastAsia', 'hAnsi');
+
+        if (!is_array($val)) {
+            $val = array(
+                'ascii' => $val,
+                'cs' => $val,
+                'hAnsi' => $val,
+                //'eastAsia' => $val,
+            );
+        }
+
+        $prop = $root->ownerDocument->createElement('w:' . $name);
+        foreach ($val as $k => $v) {
+            $prop->appendChild(new \DOMAttr('w:' . $k, $v));
+        }
+        $root->appendChild($prop);
+        return true;
+    }
+
     protected function process_tblWidth($name, $val, ElementInterface $element, \DOMNode $root)
     {
         $type = 'dxa';                          // default to twips

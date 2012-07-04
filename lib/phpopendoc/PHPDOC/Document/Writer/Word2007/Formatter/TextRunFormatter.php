@@ -31,6 +31,7 @@ class TextRunFormatter extends Shared
         'double-strike' => 'dstrike',
         'style'         => 'rStyle',
         'valign'        => 'vertAlign',
+        'font'          => 'rFonts',
     );
 
     protected function initMap()
@@ -40,10 +41,10 @@ class TextRunFormatter extends Shared
             'b'                     => 'bool',
             'bdr'                   => 'border',
             'caps'                  => 'caps',
-            'color'                 => 'color',
+            'color'                 => 'text',      // @todo change to "color"
             'dstrike'               => 'bool',
             'effect'                => 'text',
-            'em'                    => 'bool',
+            'em'                    => 'emphasis',
             'emboss'                => 'bool',
             'fitText'               => 'fittext',
             'highlight'             => 'text',
@@ -53,6 +54,7 @@ class TextRunFormatter extends Shared
             'noProof'               => 'bool',
             'outline'               => 'bool',
             'position'              => 'position',  // hps measurement
+            'rFonts'                => 'font',
             'rStyle'                => 'text',
             'rtl'                   => 'bool',
             'shadow'                => 'bool',
@@ -63,80 +65,63 @@ class TextRunFormatter extends Shared
             'specVanish'            => 'bool',
             'strike'                => 'strike',
             'sz'                    => 'size',      // hps measurement
-            'u'                     => 'bool',
+            'u'                     => 'underline',
             'vanish'                => 'bool',
             'vertAlign'             => 'text',
-            'w'                     => 'decimal',   // actually a percent 0-100%
+            'w'                     => 'decimal',   // actually a percent 0-600%
             'webHidden'             => 'bool',
         ) + $this->map;
     }
 
-    ///**
-    // * "spacing" translation
-    // */
-    //protected function translate_spacing($name, $val, $node)
-    //{
-    //    return $this->appendSimpleValue($node, Translator::pointToTwip($val));
-    //}
-    //
-    ///**
-    // * "size" translation
-    // */
-    //protected function translate_sz($name, $val, $node)
-    //{
-    //    return $this->appendSimpleValue($node, Translator::pointToHalfPoint($val));
-    //}
-    //
-    ///**
-    // * "bold" translation
-    // */
-    //protected function translate_b($name, $val, $node)
-    //{
-    //    return $this->appendSimpleValue($node, self::getOnOff($val));
-    //}
-    //
-    ///**
-    // * "underline" translation
-    // */
-    //protected function translate_u($name, $val, $node)
-    //{
-    //    static $valid = array(
-    //        'single', 'words', 'double', 'thick', 'dotted', 'dottedHeavy',
-    //        'dash', 'dashedHeavy', 'dashLong', 'dashLongHeavy', 'dotDash',
-    //        'dashDotHeavy', 'dotDotDash', 'dashDotDotHeavy', 'wave',
-    //        'wavyHeavy', 'wavyDouble', 'none',
-    //    );
-    //
-    //    if ($val === true) {
-    //        $val = 'single';
-    //    }
-    //    if (!in_array($val, $valid)) {
-    //        throw new SaveException("Invalid underline value \"$val\". Must be one of: " . implode(',',$valid));
-    //    }
-    //
-    //    // @todo Underline actually has other attributes
-    //    //       (color, themeColor, themeShade, themeTint)
-    //    return $this->appendSimpleValue($node, $val);
-    //}
-    //
-    ///**
-    // * "emphasis" translation
-    // */
-    //protected function translate_em($name, $val, $node)
-    //{
-    //    static $valid = array(
-    //        'none', 'dot', 'comma', 'circle', 'underDot'
-    //    );
-    //
-    //    if ($val === true) {
-    //        $val = 'dot';
-    //    }
-    //    if (!in_array($val, $valid)) {
-    //        throw new SaveException("Invalid emphasis value \"$val\". Must be one of: " . implode(',',$valid));
-    //    }
-    //
-    //    // @todo Underline actually has other attributes
-    //    //       (color, themeColor, themeShade, themeTint)
-    //    return $this->appendSimpleValue($node, $val);
-    //}
+    protected function process_size($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        return $this->appendSimpleValue($root, $name, Translator::pointToHalfPoint($val));
+    }
+
+    protected function process_spacing($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        // @todo this isn't very smart ...
+        // if $val is an array then it was bubbled up from its paragraph parent
+        if (is_array($val)) {
+            return false;
+        }
+        return $this->appendSimpleValue($root, $name, Translator::pointToTwip($val));
+    }
+
+    protected function process_underline($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $valid = array(
+            'single', 'words', 'double', 'thick', 'dotted', 'dottedHeavy',
+            'dash', 'dashedHeavy', 'dashLong', 'dashLongHeavy', 'dotDash',
+            'dashDotHeavy', 'dotDotDash', 'dashDotDotHeavy', 'wave',
+            'wavyHeavy', 'wavyDouble', 'none',
+        );
+
+        if ($val === true) {
+            $val = 'single';
+        }
+        if (!in_array($val, $valid)) {
+            throw new SaveException("Invalid underline value \"$val\". Must be one of: " . implode(',',$valid));
+        }
+
+        // @todo Underline actually has other attributes
+        //       (color, themeColor, themeShade, themeTint)
+        return $this->appendSimpleValue($root, $name, $val);
+    }
+
+    protected function process_emphasis($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $valid = array(
+            'none', 'dot', 'comma', 'circle', 'underDot'
+        );
+
+        if ($val === true) {
+            $val = 'dot';
+        }
+        if (!in_array($val, $valid)) {
+            throw new SaveException("Invalid emphasis value \"$val\". Must be one of: " . implode(',',$valid));
+        }
+
+        return $this->appendSimpleValue($root, $name, $val);
+    }
 }

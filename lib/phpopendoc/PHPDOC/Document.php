@@ -11,7 +11,12 @@ namespace PHPDOC;
 use PHPDOC\Element\Section,
     PHPDOC\Element\SectionInterface,
     PHPDOC\Property\Properties,
-    PHPDOC\Property\PropertiesInterface
+    PHPDOC\Property\PropertiesInterface,
+    PHPDOC\Style\StyleInterface,
+    PHPDOC\Style\ParagraphStyle,
+    PHPDOC\Style\ParagraphStyleInterface,
+    PHPDOC\Style\TextStyle,
+    PHPDOC\Style\TextStyleInterface
     ;
 
 /**
@@ -26,6 +31,8 @@ use PHPDOC\Element\Section,
 class Document implements \IteratorAggregate, \ArrayAccess, \Countable
 {
     protected $sections;
+    protected $styles;
+    protected $defaultStyles;
     protected $currentSection;
     protected $properties;
 
@@ -33,6 +40,18 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
     {
         $this->properties = new Properties($properties);
         $this->sections = array();
+        $this->styles = array();
+        $this->defaultStyles = array();
+
+        // apply default styles, if set ...
+        if ($this->properties->has('defaultStyles')) {
+            foreach ($this->properties['defaultStyles'] as $k => $v) {
+                $method = 'setDefault' . ucfirst(strtolower($k)) . 'Style';
+                if (method_exists($this, $method)) {
+                    $this->$method($v);
+                }
+            }
+        }
     }
 
     public function getProperties()
@@ -61,6 +80,83 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
         $this->properties = $properties;
     }
 
+    public function hasStyles()
+    {
+        return count($this->styles) > 0;
+    }
+
+    public function getStyle($name)
+    {
+        if (isset($this->styles[$name])) {
+            return $this->styles[$name];
+        }
+        return false;
+    }
+
+    public function getStyles()
+    {
+        return $this->styles;
+    }
+
+    public function getDefaultStyles()
+    {
+        return $this->defaultStyles;
+    }
+
+    /**
+     * Add a new style to the document
+     *
+     * @param Style $style The style to add
+     */
+    public function addStyle(StyleInterface $style)
+    {
+        $this->styles[ strtolower($style->getId()) ] = $style;
+        //$this->styles[ strtolower($style->getName()) ] = $style;
+        return $style;
+    }
+
+    /**
+     * Add a default style to the document
+     *
+     * Shortcut method that allows the caller to add any default style by
+     * passing in the proper StyleInterface object.
+     *
+     * @param StyleInterface $style A Paragraph or Text style
+     */
+    public function addDefaultStyle(StyleInterface $style)
+    {
+        $type = $style->getType();
+        $method = 'setDefault' . ucfirst(strtolower($type)) . 'Style';
+        if (method_exists($this, $method)) {
+            $this->$method($style);
+        } else {
+            throw new \Exception("Unknown default style type \"$type\" given. Expected \"paragraph\" or \"text\"");
+        }
+    }
+
+    /**
+     * Set the default paragraph style.
+     *
+     * @param mixed $style An array or PropertiesInterface instance
+     */
+    public function setDefaultParagraphStyle($style)
+    {
+        $this->defaultStyles['paragraph'] = new ParagraphStyle('DefaultParagraph',
+            $style instanceof StyleInterface ? $style->getProperties() : $style
+        );
+    }
+
+    /**
+     * Set the default text style.
+     *
+     * @param mixed $style An array or PropertiesInterface instance
+     */
+    public function setDefaultTextStyle($style)
+    {
+        $this->defaultStyles['text'] = new TextStyle('DefaultText',
+            $style instanceof StyleInterface ? $style->getProperties() : $style
+        );
+    }
 
     /**
      * Add a new section to the document
@@ -164,6 +260,12 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
             if (!empty($ofs)) {
                 $value->setName($ofs);
             }
+            $this->addSection($value);
+        } elseif ($value instanceof StyleInterface) {
+            if (!empty($ofs)) {
+                $value->setId($ofs);
+            }
+            $this->addStyle($value);
         } else {
             $type = gettype($value);
             if ($type == 'object') {
@@ -171,8 +273,6 @@ class Document implements \IteratorAggregate, \ArrayAccess, \Countable
             }
             throw new \UnexpectedValueException("Assignment value not an instance of \"SectionInterface\". Got \"$type\" instead.");
         }
-
-        return $this->addSection($value);
     }
 
     /**

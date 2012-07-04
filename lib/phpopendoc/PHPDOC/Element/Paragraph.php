@@ -31,6 +31,11 @@ class Paragraph extends Element implements ParagraphInterface, BlockInterface
 
     public function __construct($elements = null, $properties = null)
     {
+        // assume a style ID is being passed in if $properties is a string
+        if (is_string($properties)) {
+            $properties = array( 'pStyle' => $properties );
+        }
+
         parent::__construct($properties);
         if ($elements and !is_array($elements)) {
             $elements = array( $elements );

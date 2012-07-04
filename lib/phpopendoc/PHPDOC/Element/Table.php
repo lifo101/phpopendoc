@@ -90,6 +90,11 @@ class Table extends Element implements TableInterface, BlockInterface
 
     public function __construct($properties = null)
     {
+        // assume a style ID is being passed in if $properties is a string
+        if (is_string($properties)) {
+            $properties = array( 'tblStyle' => $properties );
+        }
+
         parent::__construct($properties);
         $this->grid = array();
         $this->rows = array();
