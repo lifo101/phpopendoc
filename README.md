@@ -85,7 +85,7 @@ $sec->set("Just another sentence");
 // like paragraphs, tables and images.
 $sec->addHeader()->set("My Header");
 
-Writer\XML::saveDocument($doc); // output to STDOUT
+Writer\Word2007::saveDocument($doc, 'ex_simple.docx');
 
 ?>
 ```
@@ -117,6 +117,6 @@ $sec[] = Table::create()
         ->cell('R2C3')
     ;
 
-Writer\XML::saveDocument($doc); // output to STDOUT
+Writer\Word2007::saveDocument($doc, 'ex_table.docx');
 
 ```
