@@ -389,6 +389,12 @@ class Word2007 implements WriterInterface
         $node = $dom->createElement('w:hyperlink');
         $root->appendChild($node);
 
+        // add properties for the element
+        $prop = $dom->createElement('w:rPr');
+        if ($this->formatter->format($element, $prop)) {
+            $node->appendChild($prop);
+        }
+
         $rid = $this->getRelationshipId('hyperlink', $element->getTarget());
         if (!$rid) {
             $rid = $this->addRelationship('hyperlink', $element->getTarget(), $element->getTarget(), true);

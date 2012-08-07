@@ -39,6 +39,12 @@ class Link extends Paragraph implements LinkInterface
         if ($elements == null) {
             $elements = $target;
         }
+
+        // assume a style ID is being passed in if $properties is a string
+        if (is_string($properties)) {
+            $properties = array( 'rStyle' => $properties );
+        }
+
         parent::__construct($elements, $properties);
         $this->target = $target;
     }
