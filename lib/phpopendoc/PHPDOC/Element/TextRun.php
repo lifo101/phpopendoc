@@ -68,7 +68,8 @@ class TextRun extends Element implements TextRunInterface
         if ($element instanceof TextInterface) {
             // if the Text element has any properties we have to transfer
             // those properties over to the TextRun since Text elements
-            // can not have properties of their own.
+            // can not have style properties of their own. However, Text
+            // elements CAN have other properties like toggling 'fields'.
             if ($element->hasProperties()) {
                 foreach ($element->getProperties() as $key => $val) {
                     $this->properties[$key] = $val;
@@ -77,7 +78,8 @@ class TextRun extends Element implements TextRunInterface
         } elseif ($element instanceof LinkInterface) {
             throw new ElementException("A Link can not be nested inside a TextRun");
         } elseif (!($element instanceof ElementInterface)) {
-            $element = new Text($element);
+            // pass our properties onto the new element
+            $element = new Text($element, $this->properties);
         }
         $this->elements[] = $element;
     }

@@ -15,7 +15,7 @@ require __DIR__ . '/autoload.php';
 
 use PHPDOC\Document,
     PHPDOC\Document\Writer,
-    PHPDOC\Element\Section,	
+    PHPDOC\Element\Section,
     PHPDOC\Element\Paragraph,
     PHPDOC\Element\Image,
     PHPDOC\Element\Link,
@@ -24,7 +24,11 @@ use PHPDOC\Document,
     ;
 
 // start a new document...
-$doc = new Document();
+$doc = new Document(array(
+    // If true: {FIELD} tokens within text elements will be converted to a
+    // Field() object automatically. Disabled by default.
+    'interpolate_fields' => true
+));
 
 // Create a section (the name is optional)
 $sec = $doc->addSection('page one');
@@ -52,7 +56,7 @@ $sec[] = new Paragraph(array(
 
 // add header/footers ... Here I add a simple text strings but you can also add
 // almost any content you would normally add to a Section as well.
-$sec->addHeader()->set("My Header");
+$sec->addHeader()->set("My Header -- Page {PAGE} of {NUMPAGES}");
 $sec->addFooter('odd')->set("Odd page header");
 $sec->addFooter('even')->set("Even page header");
 

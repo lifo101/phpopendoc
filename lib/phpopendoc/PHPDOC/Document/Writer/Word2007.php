@@ -20,6 +20,7 @@ use PHPDOC\Document,
     PHPDOC\Element\ElementInterface,
     PHPDOC\Element\HeaderFooterInterface,
     PHPDOC\Element\Paragraph,
+    PHPDOC\Element\Field,
     PHPDOC\Element\TextRun,
     PHPDOC\Element\Table
     ;
@@ -68,19 +69,15 @@ class Word2007 implements WriterInterface
      * Saves the document as a Microsoft Word document "docx" file.
      *
      * @param string   $output   Output filename or other stream.
-     * @param Document $document Document to process. Optional only if a
-     *                           document was given to the constructor.
      */
-    public function save($output = null, Document $document = null)
+    public function save($output = null)
     {
         if ($output === null) {
             $output = 'php://output';
         }
-        if ($document === null) {
-            if ($this->document === null) {
-                throw new SaveException("No document defined");
-            }
-            $document = $this->document;
+
+        if ($this->document === null) {
+            throw new SaveException("No document defined");
         }
 
         $this->initArchive();
@@ -98,15 +95,15 @@ class Word2007 implements WriterInterface
         // create start package relationships
         $this->docFile = '';
         $this->addRelationship('officeDocument', 'word/document.xml');
-        $this->processDocumentSettings($document);
-        $this->processDocumentCoreProperties($document);
+        $this->processDocumentSettings($this->document);
+        $this->processDocumentCoreProperties($this->document);
 
         // create the main document
         $this->docFile = 'word/document.xml';
         // create styles before the document so we can determine if a style is
         // valid before it's used.
-        $this->processDocumentStyles($document);
-        $this->createDocument($document, $body);
+        $this->processDocumentStyles($this->document);
+        $this->createDocument($this->document, $body);
 
         // process package parts
         $this->processRelationships();
@@ -406,6 +403,40 @@ class Word2007 implements WriterInterface
     }
 
     /**
+     * Process a Field
+     *
+     * A Field <w:fldChar> or <w:fldSimple> is a bit of dynamic text inserted
+     * by the word processor application.
+     */
+    private function processFieldElement(ElementInterface $element, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+
+        if ($element->getType() == 'simple') {
+            $node = $dom->createElement('w:fldSimple');
+            $root->appendChild($node);
+
+            $instr = $element->getInstruction();
+            $param = $element->getParams();
+            if ($param) {
+                $instr .= ' ' . $param;
+            }
+
+            $node->appendChild(new \DOMAttr('w:instr', $instr));
+        } else {
+            throw new SaveException("Complex field {{$element->getInstruction()}} is not supported yet.");
+        }
+
+        // add properties for the element
+        //$prop = $dom->createElement('w:rPr');
+        //if ($this->formatter->format($element, $prop)) {
+        //    $node->appendChild($prop);
+        //}
+
+        return $node;
+    }
+
+    /**
      * Process a TextRun.
      *
      * A TextRun <w:r> can contain text elements.
@@ -431,13 +462,32 @@ class Word2007 implements WriterInterface
     private function processTextElement(ElementInterface $element, \DOMNode $root)
     {
         $dom = $root->ownerDocument;
-        $node = $dom->createElement('w:t', $element->getContent());
-        // if any whitespace is seen at the begin/end then preserve it
-        if (substr($element->getContent(), 0, 1) == ' ' or
-            substr($element->getContent(), -1) == ' ') {
-            $node->appendChild(new \DOMAttr('xml:space', 'preserve'));
+
+        $eleprop = $element->getProperties();
+        $docprop = $this->document->getProperties();
+        $doFields = ($eleprop['interpolate_fields'] or
+                    (!$eleprop->has('interpolate_fields') and $docprop['interpolate_fields']));
+
+        // @todo Not the best way to interpolate {FIELDS} from text elements
+        $list = $doFields
+            ? preg_split('/(\{[A-Z]+(?:\s+(?:\\\\[@#*]\s+".+?"))?\})/', $element->getContent(), -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY)
+            : array( $element->getContent() );
+        if ($list === false) $list = array( $element->getContent() );
+
+        foreach ($list as $content) {
+            if ($doFields and substr($content,0,1) == '{') {
+                $content = substr($content, 1);
+                $content = substr($content,0,-1);
+                $this->processElement(new Field($content), $root);
+            } else {
+                $node = $dom->createElement('w:t', $content);
+                // if any whitespace is seen at the begin/end then preserve it
+                if (substr($content, 0, 1) == ' ' or substr($content, -1) == ' ') {
+                    $node->appendChild(new \DOMAttr('xml:space', 'preserve'));
+                }
+                $root->appendChild($node);
+            }
         }
-        $root->appendChild($node);
         return $root;
     }
 
@@ -1103,8 +1153,8 @@ class Word2007 implements WriterInterface
      */
     public static function saveDocument(Document $document, $output = null)
     {
-        $writer = new Word2007();
-        return $writer->save($output, $document);
+        $writer = new Word2007($document);
+        return $writer->save($output);
     }
 
     /**

@@ -51,6 +51,7 @@ class Paragraph extends Element implements ParagraphInterface, BlockInterface
     {
         if ($element instanceof ElementInterface) {
             if (($element instanceof TextRunInterface) or
+                ($element instanceof FieldInterface) or
                 ($element instanceof BookmarkInterface) or
                 ($element instanceof BookmarkMarkInterface) or
                 ($element instanceof LinkInterface)) {

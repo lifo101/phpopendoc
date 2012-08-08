@@ -50,14 +50,27 @@ class Bookmark extends Element implements BookmarkInterface
      */
     private static $id = 0;
 
-    public function __construct($name, $elements, $properties = null)
+    public function __construct($name, $elements = null, $properties = null)
     {
+        // if no elements are given assume the $name is actually an element
+        // (usually a plain string).
+        if ($elements === null) {
+            $elements = $name;
+            $name = self::generateName($elements);
+        }
+
         if (isset(self::$cache[$name])) {
             throw new ElementException("Duplicate bookmark name \"$name\"");
         }
+
         self::$id += 1;
         self::$last = $name;
         self::$cache[$name] = self::$id;
+
+        // assume a style ID is being passed in if $properties is a string
+        if (is_string($properties)) {
+            $properties = array( 'style' => $properties );
+        }
 
         parent::__construct($properties);
         if (!is_array($elements)) {
@@ -117,5 +130,32 @@ class Bookmark extends Element implements BookmarkInterface
         self::$cache = array();
         self::$last = null;
         self::$id = 0;
+    }
+
+    /**
+     * Attempt to generate a name for the bookmark based on the elements that
+     * define the bookmark content. It finds the first piece of plain text
+     * to use as the name.
+     */
+    public static function generateName($element)
+    {
+        $list = is_array($element) ? $element : array($element);
+        $name = null;
+        foreach ($list as $e) {
+            if (is_string($e) or $e instanceof Text) {
+                $name = ($e instanceof Text ? $e->getContent() : $e);
+                break;
+            } elseif ($e instanceof ElementInterface) {
+                $name = self::generateName($e->getElements());
+                if ($name !== null) {
+                    return $name;
+                }
+            }
+        }
+
+        if ($name !== null) {
+            $name = str_replace(' ', '', $name); // . self::$id;
+        }
+        return $name;
     }
 }
