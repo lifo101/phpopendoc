@@ -474,15 +474,18 @@ class Word2007 implements WriterInterface
             : array( $element->getContent() );
         if ($list === false) $list = array( $element->getContent() );
 
+        static $whitespace = array(' ', "\r", "\n", "\t");
         foreach ($list as $content) {
             if ($doFields and substr($content,0,1) == '{') {
                 $content = substr($content, 1);
                 $content = substr($content,0,-1);
                 $this->processElement(new Field($content), $root);
             } else {
-                $node = $dom->createElement('w:t', $content);
+                $node = $dom->createElement('w:t');
+                $node->appendChild(new \DOMText($content));
                 // if any whitespace is seen at the begin/end then preserve it
-                if (substr($content, 0, 1) == ' ' or substr($content, -1) == ' ') {
+                //if (substr($content, 0, 1) == ' ' or substr($content, -1) == ' ') {
+                if (in_array(substr($content, 0, 1), $whitespace) or in_array(substr($content, -1), $whitespace)) {
                     $node->appendChild(new \DOMAttr('xml:space', 'preserve'));
                 }
                 $root->appendChild($node);
