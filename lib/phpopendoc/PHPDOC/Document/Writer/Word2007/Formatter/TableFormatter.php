@@ -26,7 +26,9 @@ class TableFormatter extends Shared
         'align'     => 'jc',
         'justify'   => 'jc',
         'width'     => 'tblW',
-        'border'    => 'tblBorders'
+        'border'    => 'tblBorders',
+        'bgColor'   => 'shd',
+        'shading'   => 'shd',
     );
 
     protected function initMap()
@@ -35,7 +37,7 @@ class TableFormatter extends Shared
         $this->map = array(
             'bidiVisual'            => '',
             'jc'                    => 'align',
-            'shd'                   => 'shd',
+            'shd'                   => 'shading',
             'tblBorders'            => 'border',
             'tblCellMar'            => 'margin',
             'tblCellSpacing'        => 'spacing',

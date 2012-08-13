@@ -28,6 +28,8 @@ class ParagraphFormatter extends Shared
         'indent'    => 'ind',
         'outline'   => 'outlineLvl',
         'style'     => 'pStyle',
+        'bgColor'   => 'shd',
+        'shading'   => 'shd',
         //'font'      => 'pFonts',
     );
 
@@ -54,7 +56,7 @@ class ParagraphFormatter extends Shared
             'pFonts'                => 'font',
             'pStyle'                => 'text',
             'rPr'                   => 'run',
-            'shd'                   => 'shd',
+            'shd'                   => 'shading',
             'snapToGrid'            => 'bool',
             'spacing'               => 'spacing',
             'suppressAutoHyphens'   => 'bool',

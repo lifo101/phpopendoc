@@ -28,6 +28,8 @@ class TableCellFormatter extends Shared
         'border'        => 'tcBorders',
         'colspan'       => 'gridSpan',
         'rowspan'       => 'vMerge',
+        'bgColor'       => 'shd',
+        'shading'       => 'shd',
     );
 
     protected function initMap()
@@ -38,7 +40,7 @@ class TableCellFormatter extends Shared
             'gridSpan'          => 'decimal',
             //'hMerge'            => '',    // use gridSpan instead
             'noWrap'            => 'bool',
-            'shd'               => '',
+            'shd'               => 'shading',
             'tcBorders'         => 'border',
             'tcFitText'         => 'fittext',
             'tcMar'             => 'margin',

@@ -176,6 +176,48 @@ class Shared
         return true;
     }
 
+    protected function process_shading($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $attrs = array('val','color','fill');
+        static $valid = array(
+            null, 'nil', 'clear', 'solid', 'horzStripe', 'vertStripe',
+            'reverseDiagStripe', 'diagStripe', 'horzCross', 'diagCross',
+            'thinHorzStripe', 'thinVertStripe', 'thinReverseDiagStripe',
+            'thinDiagStripe', 'thinHorzCross', 'thinDiagCross', 'pct5',
+            'pct10', 'pct12', 'pct15', 'pct20', 'pct25', 'pct30', 'pct35',
+            'pct37', 'pct40', 'pct45', 'pct50', 'pct55', 'pct60', 'pct62',
+            'pct65', 'pct70', 'pct75', 'pct80', 'pct85', 'pct87', 'pct90',
+            'pct95',
+        );
+
+        //if (!in_array($val, $valid)) {
+        //    throw new SaveException("Invalid shading value \"$val\". Must be one of: " . implode(',',$valid));
+        //}
+
+        // if $val is a string then assume its a simple color value
+        if (!is_array($val)) {
+            $val = array(
+                'val' => 'clear',
+                'color' => 'auto',
+                'fill' => $val,
+            );
+        }
+
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+
+        foreach ($val as $k => $v) {
+            if (!in_array($k, $attrs)) {
+                continue;
+            }
+
+            $prop->appendChild(new \DOMAttr('w:' . $k, $v));
+        }
+
+        $root->appendChild($prop);
+        return true;
+    }
+
     /**
      * Lookup a property name and return the translation type for it
      *
