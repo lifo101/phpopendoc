@@ -9,7 +9,8 @@
 namespace PHPDOC\Document\Writer\Word2007\Formatter;
 
 use PHPDOC\Element\ElementInterface,
-    PHPDOC\Document\Writer\Exception\SaveException;
+    PHPDOC\Document\Writer\Exception\SaveException,
+    PHPDOC\Document\Writer\Word2007\Translator;
 
 /**
  * Shared property formats
