@@ -142,8 +142,8 @@ class Bookmark extends Element implements BookmarkInterface
         $list = is_array($element) ? $element : array($element);
         $name = null;
         foreach ($list as $e) {
-            if (is_string($e) or $e instanceof Text) {
-                $name = ($e instanceof Text ? $e->getContent() : $e);
+            if (is_string($e) or $e instanceof TextInterface) {
+                $name = ($e instanceof TextInterface ? $e->getContent() : $e);
                 break;
             } elseif ($e instanceof ElementInterface) {
                 $name = self::generateName($e->getElements());
