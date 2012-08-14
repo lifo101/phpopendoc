@@ -222,7 +222,7 @@ class Word2007 implements WriterInterface
                     // there must be a paragraph at the end to add the sectPr
                     if ($node->nodeName != 'w:p') {
                         $node = $dom->createElement('w:p');
-                        $root->appendChild();
+                        $root->appendChild($node);
                     }
 
                     // the fist node must be an <w:pPr> element
