@@ -21,8 +21,7 @@ use PHPDOC\Document,
     PHPDOC\Element\HeaderFooterInterface,
     PHPDOC\Element\Paragraph,
     PHPDOC\Element\Field,
-    PHPDOC\Element\TextRun,
-    PHPDOC\Element\Table
+    PHPDOC\Element\TextRun
     ;
 
 /**
@@ -46,6 +45,7 @@ class Word2007 implements WriterInterface
     protected $relationshipsMap;
     protected $contentTypes;
 
+    protected $numbering;
     protected $unlink;
 
     /**
@@ -63,6 +63,7 @@ class Word2007 implements WriterInterface
         $this->relationships = array();
         $this->relationshipsMap = array();
         $this->unlink = array();
+        $this->numbering = array();
     }
 
     /**
@@ -95,7 +96,7 @@ class Word2007 implements WriterInterface
         // create start package relationships
         $this->docFile = '';
         $this->addRelationship('officeDocument', 'word/document.xml');
-        $this->processDocumentSettings($this->document);
+        $this->processDocumentSettings();
         $this->processDocumentCoreProperties($this->document);
 
         // create the main document
@@ -105,7 +106,10 @@ class Word2007 implements WriterInterface
         $this->processDocumentStyles($this->document);
         $this->createDocument($this->document, $body);
 
+
+
         // process package parts
+        $this->processDocumentNumbering();
         $this->processRelationships();
         $this->addDefaultContentTypes();
         $this->processContentTypes();
@@ -268,6 +272,30 @@ class Word2007 implements WriterInterface
         } else {
             // @todo should an Exception be thrown for unknown elements?
             //throw new SaveException("Unable to process unknown element \"" . get_class($element) . "\"");
+        }
+
+        return $root;
+    }
+
+    /**
+     * Process a List
+     */
+    private function processListItemsElement(ElementInterface $element, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+
+        $level = $element->getLevel();
+        if (!isset($this->numbering[ $element->getParentId() ])) {
+            $this->numbering[ $element->getId() ] = $element->getListId();
+        }
+        // The $element has 1 or more items. Each item is a Paragraph
+        foreach ($element as $item) {
+            // setup the numbering properties for the item before processing it
+            $prop = $item->getProperties();
+            $prop['numPr.ilvl'] = $level;
+            $prop['numPr.numId'] = $element->getParentId();
+
+            $this->traverseElement($item, $root, 'processElement');
         }
 
         return $root;
@@ -557,7 +585,7 @@ class Word2007 implements WriterInterface
                     $this->addFile($tmp, $target);
 
                     // can't unlink the file until after the ZIP is closed
-                    $this->unlink[]= $tmp;
+                    $this->unlink[] = $tmp;
                 } else {
                     $this->addFile($src, $target);
                 }
@@ -878,7 +906,50 @@ class Word2007 implements WriterInterface
         $this->addFileFromString($dom->saveXML(), 'word/styles.xml');
     }
 
-    private function processDocumentSettings(Document $document)
+    private function processDocumentNumbering()
+    {
+        if ($this->numbering) {
+            // @todo Move static directory somewhere else more appropriate
+            $source = $this->properties->get('static_path', __DIR__ . '/../../../../../static') . '/numbering.xml';
+            $path = realpath($source);
+
+            $dom = new \DOMDocument('1.0', 'utf-8');
+            $dom->xmlStandalone = true;
+            $dom->formatOutput = true;
+            $dom->preserveWhiteSpace = false;
+            if (!$path or !$dom->load($path, LIBXML_NONET)) {
+                throw new SaveException("Erroring loading numbering source from $source: " . error_get_last());
+            }
+
+            // remove any "<w:num>" elements still in the static file
+            // (sometimes I forget to remove them when I update the
+            // numbering.xml schema).
+            $xp = new \DOMXPath($dom);
+            foreach ($xp->query('//w:numbering/w:num') as $e) {
+                $e->parentNode->removeChild($e);
+            }
+            unset($xp);
+
+            // add a <w:num> entry for each unique list
+            foreach ($this->numbering as $numId => $absId) {
+                $node = $dom->createElement('w:num');
+                $node->appendChild(new \DOMAttr('w:numId', $numId));
+                $dom->documentElement->appendChild($node);
+
+                $abs = $dom->createElement('w:abstractNumId');
+                $abs->appendChild(new \DOMAttr('w:val', $absId));
+                $node->appendChild($abs);
+            }
+
+            $xml = $dom->saveXML();
+
+            $this->addContentType('/word/numbering.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml', true);
+            $this->addRelationship('numbering', 'word/numbering.xml');
+            $this->addFileFromString($xml, 'word/numbering.xml');
+        }
+    }
+
+    private function processDocumentSettings()
     {
         // @todo Move static directory somewhere else more appropriate
         $source = $this->properties->get('static_path', __DIR__ . '/../../../../../static') . '/settings.xml';
@@ -959,6 +1030,11 @@ class Word2007 implements WriterInterface
             'rid'  => 0,
             'rels' => array()
         );
+    }
+
+    private function hasRelationship($type)
+    {
+        return isset($this->relationships[$this->docFile]);
     }
 
     /**

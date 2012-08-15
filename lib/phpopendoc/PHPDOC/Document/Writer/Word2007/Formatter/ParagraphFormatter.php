@@ -72,6 +72,26 @@ class ParagraphFormatter extends Shared
         ) + $this->map;
     }
 
+    protected function process_numbering($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+
+        if (!is_array($val)) {
+            $val = array(
+                'ilvl' => 0,
+                'numId' => $val ?: 0,
+            );
+        }
+
+        foreach ($val as $k => $v) {
+            $this->appendSimpleValue($prop, $k, $v);
+        }
+
+        $root->appendChild($prop);
+        return true;
+    }
+
     /**
      * Process spacing
      */
