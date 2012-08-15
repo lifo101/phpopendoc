@@ -6,7 +6,7 @@
  *
  * @author Jason Morriss <lifo101@gmail.com>
  * @since  1.0
- * 
+ *
  */
 namespace PHPDOC\Component;
 
@@ -32,7 +32,7 @@ namespace PHPDOC\Component;
 class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
 {
     protected $properties;
-    
+
     public function __construct($properties = null)
     {
         if (is_array($properties)) {
@@ -54,7 +54,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
             }
         }
     }
-    
+
     /**
      * Intercept calls to ->set"Property"(...) where "Property" is the name of
      * a property to set (case-sensitive).
@@ -74,7 +74,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
         }
         throw new \BadMethodCallException("Undefined method \"$name\"");
     }
-    
+
     /**
      * Set a property by key
      *
@@ -93,7 +93,21 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
         }
         return $this;
     }
-    
+
+    /**
+     * Merge other properties to our own. Existing keys in the merged properties
+     * will be overwritten.
+     *
+     * @param array|PropertyBag $props
+     */
+    public function merge($theirs)
+    {
+        if ($theirs instanceof PropertyBag) {
+            $theirs = $theirs->all();
+        }
+        $this->properties = array_merge_recursive($this->properties, $theirs);
+    }
+
     private function &_getArrayRef($path, $auto_create = false)
     {
         $keys = explode('.', $path);
@@ -108,7 +122,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
                     throw new \Exception("Key path not found");
                 }
             }
-            
+
             if (is_array($ref)) {
                 $ref =& $ref[$key];
             } else {
@@ -120,13 +134,13 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
                 }
             }
         }
-        
+
         return $ref;
     }
 
     /**
      * Remove a property by key
-     */	
+     */
     public function remove($key)
     {
         if (strpos($key, '.') === false) {
@@ -142,7 +156,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
 
         return $this;
     }
-    
+
     /**
      * Return an array of all properties
      */
@@ -150,7 +164,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     {
         return $this->properties;
     }
-    
+
     /**
      * Return true/false if the key exists
      */
@@ -167,7 +181,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
             return false;
         }
     }
-    
+
     /**
      * Return a property by key or path
      *
@@ -181,7 +195,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
         if (!$deep || strpos($key, '.') === false) {
             return array_key_exists($key, $this->properties) ? $this->properties[$key] : $default;
         }
-        
+
         try {
             $ref =& $this->_getArrayRef($key);
             return $ref;
@@ -189,17 +203,17 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
             return $default;
         }
     }
-    
+
     /**
      * Return an iterator for the properties
-     * 
+     *
      * @internal Implements \IteratorAggregate
      */
     public function getIterator()
     {
         return new \ArrayIterator($this->properties);
     }
-    
+
     /**
      * Return the number of properties
      *
@@ -209,7 +223,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     {
         return count($this->properties);
     }
-    
+
     /**
      * Set property by key name
      *
@@ -219,7 +233,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     {
         $this->set($ofs, $value);
     }
-    
+
     /**
      * Determine if property exists by key name
      *
@@ -229,7 +243,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     {
         return $this->has($ofs);
     }
-    
+
     /**
      * Remove property by key name
      *
@@ -239,7 +253,7 @@ class PropertyBag implements \IteratorAggregate, \Countable, \ArrayAccess
     {
         $this->remove($ofs);
     }
-    
+
     /**
      * Get property by key name
      *
