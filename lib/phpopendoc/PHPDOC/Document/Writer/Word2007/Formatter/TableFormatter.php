@@ -30,6 +30,8 @@ class TableFormatter extends Shared
         'bgColor'   => 'shd',
         'shading'   => 'shd',
         'indent'    => 'tblInd',
+        'margin'    => 'tblCellMar',
+        'spacing'   => 'tblCellSpacing',
     );
 
     protected function initMap()
@@ -41,7 +43,7 @@ class TableFormatter extends Shared
             'shd'                   => 'shading',
             'tblBorders'            => 'border',
             'tblCellMar'            => 'margin',
-            'tblCellSpacing'        => 'spacing',
+            'tblCellSpacing'        => 'tblSpacing',
             'tblInd'                => 'tblIndent',
             'tblLayout'             => '',
             'tblLook'               => '',

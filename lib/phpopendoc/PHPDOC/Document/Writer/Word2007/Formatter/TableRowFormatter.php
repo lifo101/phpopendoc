@@ -40,7 +40,7 @@ class TableRowFormatter extends Shared
             'gridAfter'             => 'decimal',
             'gridBefore'            => 'decimal',
             'jc'                    => 'align',
-            'tblCellSpacing'        => 'spacing',
+            'tblCellSpacing'        => 'tblSpacing',
             'tblHeader'             => 'bool',
             'trHeight'              => 'height',
             'wAfter'                => '',

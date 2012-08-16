@@ -154,6 +154,11 @@ class Shared
         return $this->process_tblWidth($name, $val, $element, $root);
     }
 
+    protected function process_tblSpacing($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        return $this->process_tblWidth($name, $val, $element, $root);
+    }
+
     protected function process_tblWidth($name, $val, ElementInterface $element, \DOMNode $root)
     {
         $type = 'dxa';                          // default to twips
