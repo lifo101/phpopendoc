@@ -51,6 +51,22 @@ class TableCellFormatter extends Shared
         ) + $this->map;
     }
 
+    protected function process_valign($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $valid = array( 'both', 'bottom', 'center', 'top' );
+
+        if ($val == 'justify') {
+            $val = 'both';
+        } elseif ($val == 'middle') {
+            $val = 'center';
+        }
+        if (!in_array($val, $valid)) {
+            throw new SaveException("Invalid valign value \"$val\". Must be one of: " . implode(',',$valid));
+        }
+
+        return $this->appendSimpleValue($root, $name, $val);
+    }
+
     /**
      * Process vMerge property
      */
