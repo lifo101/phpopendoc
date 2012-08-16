@@ -29,6 +29,7 @@ class TableRowFormatter extends Shared
         'spacing'       => 'tblCellSpacing',
         'skipBefore'    => 'gridBefore',
         'skipAfter'     => 'gridAfter',
+        'repeat'        => 'tblHeader',
     );
 
     protected function initMap()
