@@ -7,7 +7,7 @@ tranformations.
 
 ## Development Status
 
-__This library is in early development but can now produce a working Word 2007 "docx" document (barely).__
+__This library is in early development but can produce working Word 2007 "docx" documents.__
 The XML writer also works but the structure of the XML may change a few times
 before I finalize its structure. Right now its a hybrid of XHTML and WordML that
 I used for testing purposes (however, most of my testing is now done with the
@@ -47,6 +47,7 @@ it hard to write any tests for the Writer classes).
   * Field (dynamic text like automatic page numbers)
   * Header/Footer
   * Image
+  * ListItems (bulleted/numbered lists)
   * Paragraph
   * Table
   * Text
@@ -79,12 +80,18 @@ $sec[] = new Paragraph(array(
 $sec[] = "This is another sentence, inside separate paragraph.";
 $sec[] = new Text("Here is one more that is green...", array('color' => '00DD00'));
 
+$sec[] = "Here is a basic list:";
+$sec[] = ListItems::create()
+    ->item("Item 1")
+    ->item("Item 2");
+
 // The Section variable is not just a normal array
 $sec->set("Just another sentence");
 
-// Header/footers can contain any block level content
-// like paragraphs, tables and images.
-$sec->addHeader()->set("My Header");
+// Header/footers work just like Section's and can contain any 
+// block level content like paragraphs, tables and images.
+$head = $sec->addHeader();
+$head[] = "My Header";
 
 Writer\Word2007::saveDocument($doc, 'ex_simple.docx');
 
