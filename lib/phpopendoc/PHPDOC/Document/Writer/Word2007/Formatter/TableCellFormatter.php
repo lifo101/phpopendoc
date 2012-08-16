@@ -42,7 +42,7 @@ class TableCellFormatter extends Shared
             'noWrap'            => 'bool',
             'shd'               => 'shading',
             'tcBorders'         => 'border',
-            'tcFitText'         => 'fittext',
+            'tcFitText'         => 'bool',
             'tcMar'             => 'margin',
             'tcW'               => 'tblWidth',
             'textDirection'     => 'textdir',
