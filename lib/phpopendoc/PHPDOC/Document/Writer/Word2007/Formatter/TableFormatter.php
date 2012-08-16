@@ -32,6 +32,7 @@ class TableFormatter extends Shared
         'indent'    => 'tblInd',
         'margin'    => 'tblCellMar',
         'spacing'   => 'tblCellSpacing',
+        'layout'    => 'tblLayout',
     );
 
     protected function initMap()
@@ -45,7 +46,7 @@ class TableFormatter extends Shared
             'tblCellMar'            => 'margin',
             'tblCellSpacing'        => 'tblSpacing',
             'tblInd'                => 'tblIndent',
-            'tblLayout'             => '',
+            'tblLayout'             => 'tblLayout',
             'tblLook'               => '',
             'tblOverlap'            => '',
             'tblpPr'                => '',
@@ -54,6 +55,25 @@ class TableFormatter extends Shared
             'tblStyleRowBandSize'   => '',
             'tblW'                  => 'tblWidth',
         ) + $this->map;
+    }
+
+    protected function process_tblLayout($name, $val, ElementInterface $element, \DOMNode $root)
+    {
+        static $valid = array('autofit', 'fixed');
+
+        if ($val == 'auto') {
+            $val = 'autofit';
+        }
+        if (!in_array($val, $valid)) {
+            throw new SaveException("Invalid \"$name\" value \"$val\". Must be one of: " . implode(',',$valid));
+        }
+
+        $dom = $root->ownerDocument;
+        $prop = $dom->createElement('w:' . $name);
+        $prop->appendChild(new \DOMAttr('w:type', $val));
+
+        $root->appendChild($prop);
+        return true;
     }
 
     /**
