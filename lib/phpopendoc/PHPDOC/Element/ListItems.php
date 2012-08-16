@@ -214,8 +214,11 @@ class ListItems extends Element implements ListItemsInterface, BlockInterface
         if (is_array($element)) {
             throw new ElementException("List items may only be a single Paragraph and not an array.");
         }
-        if (!($element instanceof BlockInterface) and
-            !($element instanceof ListItemsInterface)) {
+        if ($element instanceof LinkInterface or
+            (
+            !($element instanceof BlockInterface) and
+            !($element instanceof ListItemsInterface))
+            ) {
             $element = new Paragraph($element, $properties);
         }
         $props = $this->properties->all();
