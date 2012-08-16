@@ -290,7 +290,9 @@ class Table extends Element implements TableInterface, BlockInterface
         $this->rowRef->addElement($this->cellRef);
 
         $this->add($elements);
-        $this->prop($this->_createProperties($properties, 'cell'));
+        $prop = $this->_createProperties($properties, 'cell');
+        $prop->merge($this->rowRef->getProperties());
+        $this->prop($prop);
 
         return $this;
     }
