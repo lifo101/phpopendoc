@@ -420,12 +420,17 @@ class Word2007 implements WriterInterface
             $node->appendChild($prop);
         }
 
-        $rid = $this->getRelationshipId('hyperlink', $element->getTarget());
-        if (!$rid) {
-            $rid = $this->addRelationship('hyperlink', $element->getTarget(), $element->getTarget(), true);
+        $target = $element->getTarget();
+        if (strpos($target, '://') === false) {
+            $node->appendChild(new \DOMAttr('w:anchor', $target));
+        } else {
+            $rid = $this->getRelationshipId('hyperlink', $target);
+            if (!$rid) {
+                $rid = $this->addRelationship('hyperlink', $target, $target, true);
+            }
+            $node->appendChild(new \DOMAttr('r:id', $rid));
         }
 
-        $node->appendChild(new \DOMAttr('r:id', $rid));
 
         return $node;
     }
